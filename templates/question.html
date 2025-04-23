@@ -256,8 +256,17 @@
             <form id="generateForm" class="input-form">
                 <div class="input-group">
                     <label for="reference">ERC Reference:</label>
-                    <input type="text" id="reference" name="reference" required placeholder="e.g., L1, L2">
-                    
+                    <select id="reference" name="reference" required>
+                        <option value="" disabled selected>Select an option</option>
+                        <option value="L1">L1</option>
+                        <option value="L2">L2</option>
+                        <option value="L3">L3</option>
+                        <option value="L4">L4</option>
+                        <option value="L5">L5</option>
+                        <option value="L6">L6</option>
+                        <option value="L7">L7</option>
+                        <option value="L8">L8</option>
+                    </select>
                 </div>
                 <div class="input-group">
                     <label for="reference">ERC Reference:</label>
@@ -382,6 +391,15 @@
                             <div class="param-card">
                                 <div class="param-title">Configuration Type</div>
                                 <div class="param-value">${details.shape_type}</div>
+                            </div>
+
+                            <div class="param-card">
+                                <div class="param-title">distance between the interspection point to p3  is </div>
+                                <div class="param-value">${details.geodesic.distance_to_P3_nm}</div>
+                            </div>
+                             <div class="param-card">
+                                <div class="param-title">Final Answers is </div>
+                                <div class="param-value">${details.geodesic.distance_to_P1_nm}</div>
                             </div>
                         `;
                         $('#parameters').html(parametersHtml);
