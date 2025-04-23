@@ -288,7 +288,7 @@ class AirportQuestionGenerator:
                                 
                 question_text = (
                     f"Refer ERC {selected['reference']}. You are planning a flight from {dep.name}({formatted_lat,formatted_long}) to {arr.name} ({formatted_lat_1,formatted_long_1})"
-                    f"direct  at FL{cruise_level} with a TAS of {tas_normal} kt for normal operations "
+                    f"   with a TAS of {tas_normal} kt for normal operations "
                     f"and single engine TAS of {tas_single_engine} kt. WV {wind_dir_normal}M / {wind_speed_normal} kt "
                     f"at FL{cruise_level} (normal ops crz), WV {wind_dir_single}M / {wind_speed_single} kt for single "
                     f"engine cruise level. Your calculation of the location of the single engine CP (Critical Point) "
