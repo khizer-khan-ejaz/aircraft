@@ -267,7 +267,7 @@ class AirportQuestionGenerator:
                 
                 track = self.get_track_angle(dep, arr)
                 wind_dir_normal = random.randint(20, 36) * 10
-                wind_speed_normal = int(40 + random.random() * 30)
+                wind_speed_normal = int(40 + random.random() * 30)*5
                 wind_dir_single = random.randint(20, 36) * 10
                 raw_speed = wind_speed_normal * (0.8 + random.random() * 0.4)
                 wind_speed_single = round(raw_speed / 5) * 5
@@ -275,19 +275,31 @@ class AirportQuestionGenerator:
                 P2 = (arr.lat, arr.long)
                 P3 = (eland.lat, eland.long)
                 P4 = (eland2.lat, eland2.long)
-                formatted_lat = "{:.2f}".format(P1[0])  
-                formatted_long = "{:.2f}".format(P1[1]) 
-                
-                formatted_lat_1 = "{:.2f}".format(P2[0])  
-                formatted_long_1 = "{:.2f}".format(P2[1])  
-                 
-                formatted_lat_3 = "{:.2f}".format(P3[0])  
-                formatted_long_3 = "{:.2f}".format(P3[1])  
-                formatted_lat_4 = "{:.2f}".format(P4[0])  
-                formatted_long_4 = "{:.2f}".format(P4[1]) 
-                                
+                def format_latitude(lat):
+                    degrees = abs(int(lat))  # Get absolute value of degrees (integer part)
+                    direction = 'N' if lat >= 0 else 'S'  # Determine direction
+                    return f"{degrees:02d} {direction}"  # Format as two digits and direction
+
+                # Function to format longitude
+                def format_longitude(lon):
+                    degrees = abs(int(lon))  # Get absolute value of degrees (integer part)
+                    direction = 'E' if lon >= 0 else 'W'  # Determine direction
+                    return f"{degrees:02d} {direction}"  # Format as two digits and direction
+
+# Format coordinates for each point
+                formatted_lat = format_latitude(P1[0])
+                formatted_long = format_longitude(P1[1])
+
+                formatted_lat_1 = format_latitude(P2[0])
+                formatted_long_1 = format_longitude(P2[1])
+
+                formatted_lat_3 = format_latitude(P3[0])
+                formatted_long_3 = format_longitude(P3[1])
+
+                formatted_lat_4 = format_latitude(P4[0])
+                formatted_long_4 = format_longitude(P4[1])
                 question_text = (
-                    f"Refer ERC {selected['reference']}. You are planning a flight from {dep.name}({formatted_lat,formatted_long}) to {arr.name} ({formatted_lat_1,formatted_long_1})"
+                    f"Refer ERC {selected['reference']}. You are planning a flight from {dep.name}{formatted_lat,formatted_long}{dep.code} to {arr.name} {formatted_lat_1,formatted_long_1}{arr.code}"
                     f"   with a TAS of {tas_normal} kt for normal operations "
                     f"and single engine TAS of {tas_single_engine} kt. WV {wind_dir_normal}M / {wind_speed_normal} kt "
                     f"at FL{cruise_level} (normal ops crz), WV {wind_dir_single}M / {wind_speed_single} kt for single "
