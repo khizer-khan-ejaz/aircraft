@@ -228,10 +228,10 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
         'geojson': geojson_data,
         'map_html': map_html,
         "steps":steps,
-        "OPTION-A":distance_to_P1 * 0.539957,
-        "OPTION-B":(distance_to_P1 * 0.539957)+190,
-        "OPTION-C":(distance_to_P1 * 0.539957)-190,
-        "OPTION-D":(distance_to_P1 * 0.539957)-100,
+        "OPTION-A":int(distance_to_P1 * 0.539957),
+        "OPTION-B":int((distance_to_P1 * 0.539957)+190),
+        "OPTION-C":int((distance_to_P1 * 0.539957)-190),
+        "OPTION-D":int((distance_to_P1 * 0.539957)-100),
     }
     
     return results

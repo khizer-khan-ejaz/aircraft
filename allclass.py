@@ -270,7 +270,7 @@ class AirportQuestionGenerator:
                 wind_speed_normal = int(40 + random.random() * 30)*5
                 wind_dir_single = random.randint(20, 36) * 10
                 raw_speed = wind_speed_normal * (0.8 + random.random() * 0.4)
-                wind_speed_single = round(raw_speed / 5) * 5
+                wind_speed_single = min(int(round(raw_speed / 5) * 5), 95)
                 P1 = (dep.lat, dep.long)
                 P2 = (arr.lat, arr.long)
                 P3 = (eland.lat, eland.long)
@@ -304,7 +304,7 @@ class AirportQuestionGenerator:
                     f"and single engine TAS of {tas_single_engine} kt. WV {wind_dir_normal}M / {wind_speed_normal} kt "
                     f"at FL{cruise_level} (normal ops crz), WV {wind_dir_single}M / {wind_speed_single} kt for single "
                     f"engine cruise level. Your calculation of the location of the single engine CP (Critical Point) "
-                    f"for {eland.name}({formatted_lat_3,formatted_long_3}) and {eland2.name}({formatted_lat_4,formatted_long_4}), on the {dep.code} - {arr.code} track, measured as a distance "
+                    f"for {eland.name}{formatted_lat_3,formatted_long_3} and {eland2.name}{formatted_lat_4,formatted_long_4}, on the {dep.code} - {arr.code} track, measured as a distance "
                     f"from {dep.name} is -"
                 )
                 
