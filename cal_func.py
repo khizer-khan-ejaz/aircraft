@@ -4,11 +4,12 @@ import scipy.optimize as optimize
 import logging
 from allclass import *
 from sample_airport import *
+from folium.plugins import MousePosition
 def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
     geod = Geodesic.WGS84
-   
     g_P3_P4 = geod.Inverse(P3[0], P3[1], P4[0], P4[1])
-    distance_P3_P4_nm = g_P3_P4['s12'] / 1852 
+
+    distance_P3_P4_nm = g_P3_P4['s12'] / 1852  
     def geodesic_intersection(line1_start, line1_end, line2_start, line2_end):
         def distance_between_lines(params):
             s1, s2 = params
@@ -57,7 +58,7 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
         except Exception as e:
             logging.error(f"Optimization error: {str(e)}")
             return None, None
-    
+
     def generate_geodesic_points(start, end, num_points=100):
         line = geod.InverseLine(start[0], start[1], end[0], end[1])
         
@@ -101,11 +102,11 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
         logging.warning("No intersection between P1-P2 and perpendicular line")
         return None
         
-    distance_to_P3_nm = int((geod.Inverse(p1p2_perp_intersection[0], p1p2_perp_intersection[1], P3[0], P3[1])['s12'] / 1000) * 0.539957)
+    distance_to_P3_nm = (geod.Inverse(p1p2_perp_intersection[0], p1p2_perp_intersection[1], P3[0], P3[1])['s12'] / 1000) * 0.539957
     if distance_to_P3_nm < 0.1:  # Avoid division by zero
         return None
     
-    distance_to_degree =(distance_to_P3_nm / TAS) * wind_speed
+    distance_to_degree = (distance_to_P3_nm / TAS) * wind_speed
     
     line_distance = distance_to_degree * 1852
     nm_line_point = geod.Direct(p1p2_perp_intersection[0], p1p2_perp_intersection[1], degree, line_distance)
@@ -128,10 +129,35 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
         logging.warning("No perpendicular intersection with P1-P2")
         return None
     
-    distance_to_P1 = int(geod.Inverse(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1], P1[0], P1[1])['s12'] / 1000)
+    distance_to_P1 = geod.Inverse(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1], P1[0], P1[1])['s12'] / 1000
     distance_to_P3= int(geod.Inverse(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1], P3[0], P3[1])['s12'] / 1000)
     distance_to_P4=int(geod.Inverse(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1], P4[0], P4[1])['s12'] / 1000)
-    my_map = folium.Map(location=p1p2_perp_intersection, zoom_start=6, tiles='OpenStreetMap')
+    # Create base map with OpenSky Network tiles
+    my_map = folium.Map(
+        location=p1p2_perp_intersection,
+        zoom_start=6,
+      
+        attr='OpenSky Network',
+        name='OpenSky',
+        control_scale=True
+    )
+    
+    # Add IFR Low chart as an additional tile layer
+    folium.TileLayer(
+    tiles='https://tileservice.charts.noaa.gov/tiles/50k_enrl/{z}/{x}/{y}.png',
+    attr='FAA - IFR Low Enroute Charts',
+    name='IFR Low Altitude',
+    overlay=False,
+    min_zoom=0,
+    max_zoom=10  # Adjust based on server support   
+    ).add_to(my_map)
+    # Add layer control to toggle between tile layers
+    folium.LayerControl().add_to(my_map)
+    
+    # Add mouse position for coordinate reference
+    MousePosition().add_to(my_map)
+
+    # Add all the original visualization elements
     folium.PolyLine(p1_p2_geodesic, color='purple', weight=3, tooltip='P1 to P2').add_to(my_map)
     folium.PolyLine(p3_p4_geodesic, color='orange', weight=3, tooltip='P3 to P4').add_to(my_map)
     folium.PolyLine(perp_geodesic, color='red', weight=3, tooltip='Perpendicular Line').add_to(my_map)
@@ -166,76 +192,77 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
     key_points = {"Initial Intersection": p1p2_perp_intersection, f"{degree}-Degree Line End": nm_line_end_point, "Perpendicular Intersection": perp_nm_p1p2_intersection}
     for label, coords in key_points.items():
         geojson_data["features"].append({"type": "Feature", "properties": {"name": label}, "geometry": {"type": "Point", "coordinates": [coords[1], coords[0]]}})
-        steps = [
-                {
-                    "step_number": 1,
-                    "title": "Calculate Critical Point Distance",
-                    "description": f"Calculate Distance Between Critical Landing Airports: Compute the straight-line distance between {P3} to {P4} using their geographic coordinates.",
-                    "calculation": f"Distance from {P3} to {P4}",
-                    "result": " nautical miles"
-                },
-                {
-                    "step_number": 2,
-                    "title": f"Determine Midpoint of {P3} to {P4}",
-                    "description": "Identify the midpoint along the line connecting the two critical landing airports by averaging their coordinates."
-                },
-                {
-                    "step_number": 3,
-                    "title": f"Draw {P1} to {P2} and Find Intersection",
-                    "description": "Construct a straight line from the source airport to the destination airport. "
-                                "From the midpoint (Step 2), draw a perpendicular line intersecting the source-to-destination line. "
-                                "Record the coordinates of this intersection point."
-                },
-                {
-                    "step_number": 4,
-                    "title": f"Calculate Distance from Critical Airports to Intersection",
-                    "description": "Compute the distance from one of the critical landing airports to the intersection point identified in Step 3.",
-                    "result": f"{distance_to_P3_nm} nautical miles from departure"
-                },
-                {
-                    "step_number": 5,
-                    "title": "Compute Distance Length Influenced by Wind",
-                    "description": "This calculates a length adjusted for wind impact based on the provided TAS and wind speed.",
-                    "formula": f"(distance from intersection to critical airports) / {TAS}) × {wind_speed}",
-                    "result": f"{degree} nm"
-                },
-                {
-                    "step_number": 6,
-                    "title": "Construct Wind-Adjusted Line",
-                    "description": f"From the intersection point (Step 3), create a line segment with a length equal to the wind-adjusted distance (Step 5). "
-                                f"Orient this line in the direction of {degree} degrees."
-                },
-                {
-                    "step_number": 7,
-                    "title": "Draw Perpendicular Line to Source-Destination Line",
-                    "description": "From the endpoint of the wind-adjusted line (Step 6), draw a perpendicular line intersecting the source-to-destination line. "
-                                "Record the coordinates of this new intersection point."
-                },
-                {
-                    "step_number": 8,
-                    "title": "Calculate Distance from Source to Final Intersection",
-                    "description": "Using the intersection point from Step 7 on the source-to-destination line, compute the distance from this point to the departure airport.",
-                    "result": f"{distance_to_P1 * 0.539957} nm"
-                }
-            ]
-            
+        
+    steps = [
+            {
+                "step_number": 1,
+                "title": "Calculate Critical Point Distance",
+                "description": f"Calculate Distance Between Critical Landing Airports: Compute the straight-line distance between {P3} to {P4} using their geographic coordinates.",
+                "calculation": f"Distance from {P3} to {P4}",
+                "result": " nautical miles"
+            },
+            {
+                "step_number": 2,
+                "title": f"Determine Midpoint of {P3} to {P4}",
+                "description": "Identify the midpoint along the line connecting the two critical landing airports by averaging their coordinates."
+            },
+            {
+                "step_number": 3,
+                "title": f"Draw {P1} to {P2} and Find Intersection",
+                "description": "Construct a straight line from the source airport to the destination airport. "
+                            "From the midpoint (Step 2), draw a perpendicular line intersecting the source-to-destination line. "
+                            "Record the coordinates of this intersection point."
+            },
+            {
+                "step_number": 4,
+                "title": f"Calculate Distance from Critical Airports to Intersection",
+                "description": "Compute the distance from one of the critical landing airports to the intersection point identified in Step 3.",
+                "result": f"{distance_to_P3_nm} nautical miles from departure"
+            },
+            {
+                "step_number": 5,
+                "title": "Compute Distance Length Influenced by Wind",
+                "description": "This calculates a length adjusted for wind impact based on the provided TAS and wind speed.",
+                "formula": f"(distance from intersection to critical airports) / {TAS}) × {wind_speed}",
+                "result": f"{degree} nm"
+            },
+            {
+                "step_number": 6,
+                "title": "Construct Wind-Adjusted Line",
+                "description": f"From the intersection point (Step 3), create a line segment with a length equal to the wind-adjusted distance (Step 5). "
+                            f"Orient this line in the direction of {degree} degrees."
+            },
+            {
+                "step_number": 7,
+                "title": "Draw Perpendicular Line to Source-Destination Line",
+                "description": "From the endpoint of the wind-adjusted line (Step 6), draw a perpendicular line intersecting the source-to-destination line. "
+                            "Record the coordinates of this new intersection point."
+            },
+            {
+                "step_number": 8,
+                "title": "Calculate Distance from Source to Final Intersection",
+                "description": "Using the intersection point from Step 7 on the source-to-destination line, compute the distance from this point to the departure airport.",
+                "result": f"{distance_to_P1 * 0.539957} nm"
+            }
+        ]
+        
     results = {
         'p1p2_perp_intersection': {'lat': p1p2_perp_intersection[0], 'lon': p1p2_perp_intersection[1]},
         'nm_line_end_point': {'lat': nm_line_end_point[0], 'lon': nm_line_end_point[1]},
         'perp_nm_p1p2_intersection': {'lat': perp_nm_p1p2_intersection[0], 'lon': perp_nm_p1p2_intersection[1]},
         'p1p2_nm_dist_km': p1p2_nm_dist / 1000,
-        'distance_to_P1_nm': int(distance_to_P1 * 0.539957),
+        'distance_to_P1_nm': distance_to_P1 * 0.539957,
         'distance_to_P3_nm': distance_to_P3_nm,
         'distance_to_degree': distance_to_degree,
         'geojson': geojson_data,
         'map_html': map_html,
-        "steps":steps,
-        "OPTION-A":int(distance_to_P1 * 0.539957),
-        "OPTION-B":int((distance_to_P1 * 0.539957)+190),
-        "OPTION-C":int((distance_to_P1 * 0.539957)-190),
-        "OPTION-D":int((distance_to_P1 * 0.539957)-100),
+        "steps": steps,
+        "OPTION-A": distance_to_P1 * 0.539957,
+        "OPTION-B": (distance_to_P1 * 0.539957)+190,
+        "OPTION-C": (distance_to_P1 * 0.539957)-190,
+        "OPTION-D": (distance_to_P1 * 0.539957)-100,
         'distance_p3_p4': distance_P3_P4_nm,
-        'distance_to_P3_nm': (distance_to_P3 * 0.539957),
+        'distance_to_P3_nm_1': (distance_to_P3 * 0.539957),
         'distance_to_P4_nm': (distance_to_P4 * 0.539957),
     }
     

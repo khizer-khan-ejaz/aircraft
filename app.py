@@ -211,7 +211,7 @@ def generate_question_endpoint():
         P3 = (land1.lat, land1.long)
         P4 = (land2.lat, land2.long)
         geodesic_results = calculate_geodesic(P1, P2, P3, P4, tas_normal, wind_speed, wind_dir)
-        distance_p3 = geodesic_results['distance_to_P3_nm']
+        distance_p3 = geodesic_results['distance_to_P3_nm_1']
         distance_p4 = geodesic_results['distance_to_P4_nm']
         cousefromhome=vincenty_inverse(dep.lat, dep.long, arr.lat, arr.long)[1]
         

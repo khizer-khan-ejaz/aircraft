@@ -4,13 +4,6 @@ from typing import Dict, List, NamedTuple
 import logging
 from sample_airport import *
 from cal_func import calculate_geodesic
-class Airport:
-    def __init__(self, code, name, lat, long, reference):
-        self.code = code
-        self.name = name
-        self.lat = lat
-        self.long = long
-        self.reference = reference
 
 class QuestionDetails(NamedTuple):
     departure: Airport
@@ -185,7 +178,7 @@ class AirportQuestionGenerator:
                 if min(angle_dep, angle_arr, angle_eland2) < 5:
                     continue
                 
-                eland = arr
+                eland = dep
                 shape_type = "triangle"
                 
                 return {
@@ -258,54 +251,72 @@ class AirportQuestionGenerator:
                 if num_airports == 3:
                     dep = selected["dep"]
                     arr = selected["arr"]
-                    eland = arr
+                    eland = dep
                     eland2 = selected["eland2"]
                 
                 cruise_level = random.choice([150, 170, 190, 210, 230])
-                tas_normal = random.randint(40, 60) * 5
-                tas_single_engine = int(random.randint(30, 60) * 5)
+                normal_min, normal_max = 240, 250
+                single_min, single_max = 180, 200
+
+                # Convert to possible multiples of 5
+                normal_choices = list(range(normal_min, normal_max + 1, 5))
+                single_choices = list(range(single_min, single_max + 1, 5))
+
+                # Randomly select from these choices
+                tas_normal = random.choice(normal_choices)
+                tas_single_engine = random.choice(single_choices)
                 
-                track = self.get_track_angle(dep, arr)
-                wind_dir_normal = random.randint(20, 36) * 10
-                wind_speed_normal = int(random.uniform(8, 17)) * 5
+                track = 270
+                wind_dir_raw = (track + 180 + (random.random() - 0.5) * 60) % 360
 
-                wind_dir_single = random.randint(20, 36) * 10
-                raw_speed = (wind_speed_normal+10) * (0.8 + random.random() * 0.4)
-                wind_speed_single = min(int(round(raw_speed / 5) * 5), 90)+10
-                P1 = (dep.lat, dep.long)
-                P2 = (arr.lat, arr.long)
-                P3 = (eland.lat, eland.long)
-                P4 = (eland2.lat, eland2.long)
-                def format_latitude(lat):
-                    degrees = abs(int(lat))  # Get absolute value of degrees (integer part)
-                    direction = 'N' if lat >= 0 else 'S'  # Determine direction
-                    return f"{degrees:02d} {direction}"  # Format as two digits and direction
+# Round to nearest multiple of 10
+                wind_dir_rounded = round(wind_dir_raw / 10) * 10
 
-                # Function to format longitude
-                def format_longitude(lon):
-                    degrees = abs(int(lon))  # Get absolute value of degrees (integer part)
-                    direction = 'E' if lon >= 0 else 'W'  # Determine direction
-                    return f"{degrees:02d} {direction}"  # Format as two digits and direction
+                # Ensure it's a 3-digit number (100-359)
+                if wind_dir_rounded < 100:
+                    wind_dir_rounded += 100
+                    
+                # Make sure it doesn't exceed 359
+                wind_dir_rounded = min(wind_dir_rounded, 350)
 
-# Format coordinates for each point
-                formatted_lat = format_latitude(P1[0])
-                formatted_long = format_longitude(P1[1])
+                wind_dir_normal = int(wind_dir_rounded)
+                min_speed = 40
+                max_speed = 70
+                possible_values = list(range(min_speed, max_speed + 1, 5))  # [40, 45, 50, 55, 60, 65, 70]
 
-                formatted_lat_1 = format_latitude(P2[0])
-                formatted_long_1 = format_longitude(P2[1])
+                # Randomly select from these values
+                wind_speed_normal = random.choice(possible_values)
+                wind_dir_raw = (wind_dir_normal + (random.random() - 0.5) * 20) % 360
 
-                formatted_lat_3 = format_latitude(P3[0])
-                formatted_long_3 = format_longitude(P3[1])
+# Round to nearest multiple of 10
+                wind_dir_rounded = round(wind_dir_raw / 10) * 10
 
-                formatted_lat_4 = format_latitude(P4[0])
-                formatted_long_4 = format_longitude(P4[1])
+                # Ensure it's a 3-digit number (100-359)
+                if wind_dir_rounded < 100:
+                    wind_dir_rounded += 100
+                    
+                # Make sure it doesn't exceed 359
+                wind_dir_rounded = min(wind_dir_rounded, 350)
+
+                wind_dir_single = int(wind_dir_rounded)
+                raw_speed = wind_speed_normal * (0.8 + random.random() * 0.4)
+
+# Round to nearest multiple of 5
+                rounded_speed = round(raw_speed / 5) * 5
+
+                # Ensure it's less than 90
+                if rounded_speed >= 90:
+                    rounded_speed = 85  # Next multiple of 5 below 90
+
+                wind_speed_single = int(rounded_speed)
+                
                 question_text = (
-                    f"Refer ERC {selected['reference']}. You are planning a flight from {dep.name}{formatted_lat,formatted_long}{dep.code} to {arr.name} {formatted_lat_1,formatted_long_1}{arr.code}"
-                    f"   with a TAS of {tas_normal} kt for normal operations "
+                    f"Refer ERC {selected['reference']}. You are planning a flight from {dep.name} to {arr.name} "
+                    f"direct (draw the track) at FL{cruise_level} with a TAS of {tas_normal} kt for normal operations "
                     f"and single engine TAS of {tas_single_engine} kt. WV {wind_dir_normal}M / {wind_speed_normal} kt "
                     f"at FL{cruise_level} (normal ops crz), WV {wind_dir_single}M / {wind_speed_single} kt for single "
                     f"engine cruise level. Your calculation of the location of the single engine CP (Critical Point) "
-                    f"for {eland.name}{formatted_lat_3,formatted_long_3} and {eland2.name}{formatted_lat_4,formatted_long_4}, on the {dep.code} - {arr.code} track, measured as a distance "
+                    f"for {eland.name} and {eland2.name}, on the {dep.code} - {arr.code} track, measured as a distance "
                     f"from {dep.name} is -"
                 )
                 
