@@ -193,59 +193,7 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
     for label, coords in key_points.items():
         geojson_data["features"].append({"type": "Feature", "properties": {"name": label}, "geometry": {"type": "Point", "coordinates": [coords[1], coords[0]]}})
         
-    steps = [
-            {
-                "step_number": 1,
-                "title": "Calculate Critical Point Distance",
-                "description": f"Calculate Distance Between Critical Landing Airports: Compute the straight-line distance between {P3} to {P4} using their geographic coordinates.",
-                "calculation": f"Distance from {P3} to {P4}",
-                "result": " nautical miles"
-            },
-            {
-                "step_number": 2,
-                "title": f"Determine Midpoint of {P3} to {P4}",
-                "description": "Identify the midpoint along the line connecting the two critical landing airports by averaging their coordinates."
-            },
-            {
-                "step_number": 3,
-                "title": f"Draw {P1} to {P2} and Find Intersection",
-                "description": "Construct a straight line from the source airport to the destination airport. "
-                            "From the midpoint (Step 2), draw a perpendicular line intersecting the source-to-destination line. "
-                            "Record the coordinates of this intersection point."
-            },
-            {
-                "step_number": 4,
-                "title": f"Calculate Distance from Critical Airports to Intersection",
-                "description": "Compute the distance from one of the critical landing airports to the intersection point identified in Step 3.",
-                "result": f"{distance_to_P3_nm} nautical miles from departure"
-            },
-            {
-                "step_number": 5,
-                "title": "Compute Distance Length Influenced by Wind",
-                "description": "This calculates a length adjusted for wind impact based on the provided TAS and wind speed.",
-                "formula": f"(distance from intersection to critical airports) / {TAS}) × {wind_speed}",
-                "result": f"{degree} nm"
-            },
-            {
-                "step_number": 6,
-                "title": "Construct Wind-Adjusted Line",
-                "description": f"From the intersection point (Step 3), create a line segment with a length equal to the wind-adjusted distance (Step 5). "
-                            f"Orient this line in the direction of {degree} degrees."
-            },
-            {
-                "step_number": 7,
-                "title": "Draw Perpendicular Line to Source-Destination Line",
-                "description": "From the endpoint of the wind-adjusted line (Step 6), draw a perpendicular line intersecting the source-to-destination line. "
-                            "Record the coordinates of this new intersection point."
-            },
-            {
-                "step_number": 8,
-                "title": "Calculate Distance from Source to Final Intersection",
-                "description": "Using the intersection point from Step 7 on the source-to-destination line, compute the distance from this point to the departure airport.",
-                "result": f"{distance_to_P1 * 0.539957} nm"
-            }
-        ]
-        
+    
     results = {
         'p1p2_perp_intersection': {'lat': p1p2_perp_intersection[0], 'lon': p1p2_perp_intersection[1]},
         'nm_line_end_point': {'lat': nm_line_end_point[0], 'lon': nm_line_end_point[1]},
@@ -256,7 +204,7 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
         'distance_to_degree': distance_to_degree,
         'geojson': geojson_data,
         'map_html': map_html,
-        "steps": steps,
+        
         "OPTION-A": distance_to_P1 * 0.539957,
         "OPTION-B": (distance_to_P1 * 0.539957)+190,
         "OPTION-C": (distance_to_P1 * 0.539957)-190,

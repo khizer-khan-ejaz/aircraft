@@ -268,7 +268,9 @@ def generate_question_endpoint():
                 'time1' : time_p3,
                 'distance_p4':distance_p4,
                 'time2' : time_p4,
-                'time':time
+                'time':time,
+                'course_from_home': cousefromhome,
+                'course_from_land1': cousefromland1
             }
         })
     except ValueError as ve:

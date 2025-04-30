@@ -230,7 +230,6 @@ class AirportQuestionGenerator:
                 raise ValueError("num_airports must be 3 or 4")
     
         raise ValueError(f"Could not find valid airport configuration for reference {specified_reference} after {max_attempts} attempts")
-    
     def generate_question_with_reference(self, specified_reference, num_airports):
         max_attempts = 200
         attempts = 0
@@ -251,63 +250,41 @@ class AirportQuestionGenerator:
                 if num_airports == 3:
                     dep = selected["dep"]
                     arr = selected["arr"]
-                    eland = dep
+                    eland =arr 
                     eland2 = selected["eland2"]
                 
                 cruise_level = random.choice([150, 170, 190, 210, 230])
                 normal_min, normal_max = 240, 250
                 single_min, single_max = 180, 200
 
-                # Convert to possible multiples of 5
                 normal_choices = list(range(normal_min, normal_max + 1, 5))
                 single_choices = list(range(single_min, single_max + 1, 5))
 
-                # Randomly select from these choices
                 tas_normal = random.choice(normal_choices)
                 tas_single_engine = random.choice(single_choices)
                 
                 track = 270
                 wind_dir_raw = (track + 180 + (random.random() - 0.5) * 60) % 360
-
-# Round to nearest multiple of 10
                 wind_dir_rounded = round(wind_dir_raw / 10) * 10
-
-                # Ensure it's a 3-digit number (100-359)
                 if wind_dir_rounded < 100:
                     wind_dir_rounded += 100
-                    
-                # Make sure it doesn't exceed 359
                 wind_dir_rounded = min(wind_dir_rounded, 350)
-
                 wind_dir_normal = int(wind_dir_rounded)
                 min_speed = 40
                 max_speed = 70
-                possible_values = list(range(min_speed, max_speed + 1, 5))  # [40, 45, 50, 55, 60, 65, 70]
-
-                # Randomly select from these values
+                possible_values = list(range(min_speed, max_speed + 1, 5))
                 wind_speed_normal = random.choice(possible_values)
+                
                 wind_dir_raw = (wind_dir_normal + (random.random() - 0.5) * 20) % 360
-
-# Round to nearest multiple of 10
                 wind_dir_rounded = round(wind_dir_raw / 10) * 10
-
-                # Ensure it's a 3-digit number (100-359)
                 if wind_dir_rounded < 100:
                     wind_dir_rounded += 100
-                    
-                # Make sure it doesn't exceed 359
                 wind_dir_rounded = min(wind_dir_rounded, 350)
-
                 wind_dir_single = int(wind_dir_rounded)
                 raw_speed = wind_speed_normal * (0.8 + random.random() * 0.4)
-
-# Round to nearest multiple of 5
                 rounded_speed = round(raw_speed / 5) * 5
-
-                # Ensure it's less than 90
                 if rounded_speed >= 90:
-                    rounded_speed = 85  # Next multiple of 5 below 90
-
+                    rounded_speed = 85
                 wind_speed_single = int(rounded_speed)
                 
                 question_text = (
@@ -348,22 +325,38 @@ class AirportQuestionGenerator:
                     logging.debug(f"Invalid parameters: P1={P1}, P2={P2}, P3={P3}, P4={P4}, tas={tas_single}, wind_speed={wind_speed_single}")
                     continue
                 
+                # Compute geodesic results
                 geodesic_results = calculate_geodesic(P1, P2, P3, P4, tas_single, wind_speed_single, wind_dir_single)
                 
                 if geodesic_results is None:
                     logging.warning(f"Geodesic calculation failed for: {dep.code}-{arr.code}-{eland.code}-{eland2.code}")
-                    if selected["shapeType"] == "triangle":
-                        P4_mod = (P4[0] + 0.0001, P4[1] + 0.0001)
-                        geodesic_results = calculate_geodesic(P1, P2, P3, P4_mod, tas_single, wind_speed_single, wind_dir_single)
-                        if geodesic_results is None:
-                            continue
-                    else:
-                        # For parallelogram, try perturbing P3 and P4 slightly
-                        P3_mod = (P3[0] + random.uniform(-0.001, 0.001), P3[1] + random.uniform(-0.001, 0.001))
-                        P4_mod = (P4[0] + random.uniform(-0.001, 0.001), P4[1] + random.uniform(-0.001, 0.001))
-                        geodesic_results = calculate_geodesic(P1, P2, P3_mod, P4_mod, tas_single, wind_speed_single, wind_dir_single)
-                        if geodesic_results is None:
-                            continue
+                    continue
+                
+                # Calculate time difference
+                distance_p3 = geodesic_results['distance_to_P3_nm_1']
+                distance_p4 = geodesic_results['distance_to_P4_nm']
+                course_from_home = self.get_track_angle(dep, arr)
+                course_from_land1 = self.get_track_angle(arr, dep)
+                
+                # Calculate groundspeeds using wind effects (from Flask code's calculate_wind_effects)
+                def calculate_wind_effects(true_course, tas, wind_dir, wind_speed):
+                    tc_rad = math.radians(true_course)
+                    wd_rad = math.radians(wind_dir)
+                    wca_rad = math.asin((wind_speed / tas) * math.sin(wd_rad - tc_rad))
+                    gs = tas * math.cos(wca_rad) + wind_speed * math.cos(wd_rad - tc_rad)
+                    return gs
+                
+                gs = calculate_wind_effects(course_from_home, tas_single, wind_dir_single, wind_speed_single)
+                cs = calculate_wind_effects(course_from_land1, tas_single, wind_dir_single, wind_speed_single)
+                
+                time_p3 = distance_p3 / gs
+                time_p4 = distance_p4 / cs
+                time = time_p3 - time_p4
+                
+                # Check if time difference is within 2 minutes (0.03333 hours)
+                if abs(time) > 0.016666667:
+                    logging.debug(f"Time difference {time*60:.2f} minutes exceeds 2 minutes")
+                    continue
                 
                 try:
                     critical_point = self.calculate_critical_point(question)
