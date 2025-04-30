@@ -251,7 +251,7 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
         'nm_line_end_point': {'lat': nm_line_end_point[0], 'lon': nm_line_end_point[1]},
         'perp_nm_p1p2_intersection': {'lat': perp_nm_p1p2_intersection[0], 'lon': perp_nm_p1p2_intersection[1]},
         'p1p2_nm_dist_km': p1p2_nm_dist / 1000,
-        'distance_to_P1_nm': distance_to_P1 * 0.539957,
+        'distance_to_P1_nm': int(distance_to_P1 * 0.539957),
         'distance_to_P3_nm': distance_to_P3_nm,
         'distance_to_degree': distance_to_degree,
         'geojson': geojson_data,
