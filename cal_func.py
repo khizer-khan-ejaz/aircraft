@@ -6,7 +6,9 @@ from allclass import *
 from sample_airport import *
 def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
     geod = Geodesic.WGS84
-
+   
+    g_P3_P4 = geod.Inverse(P3[0], P3[1], P4[0], P4[1])
+    distance_P3_P4_nm = g_P3_P4['s12'] / 1852 
     def geodesic_intersection(line1_start, line1_end, line2_start, line2_end):
         def distance_between_lines(params):
             s1, s2 = params
@@ -55,7 +57,7 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
         except Exception as e:
             logging.error(f"Optimization error: {str(e)}")
             return None, None
-
+    
     def generate_geodesic_points(start, end, num_points=100):
         line = geod.InverseLine(start[0], start[1], end[0], end[1])
         
@@ -127,8 +129,8 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
         return None
     
     distance_to_P1 = int(geod.Inverse(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1], P1[0], P1[1])['s12'] / 1000)
-
-
+    distance_to_P3= int(geod.Inverse(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1], P3[0], P3[1])['s12'] / 1000)
+    distance_to_P4=int(geod.Inverse(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1], P4[0], P4[1])['s12'] / 1000)
     my_map = folium.Map(location=p1p2_perp_intersection, zoom_start=6, tiles='OpenStreetMap')
     folium.PolyLine(p1_p2_geodesic, color='purple', weight=3, tooltip='P1 to P2').add_to(my_map)
     folium.PolyLine(p3_p4_geodesic, color='orange', weight=3, tooltip='P3 to P4').add_to(my_map)
@@ -232,6 +234,9 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
         "OPTION-B":int((distance_to_P1 * 0.539957)+190),
         "OPTION-C":int((distance_to_P1 * 0.539957)-190),
         "OPTION-D":int((distance_to_P1 * 0.539957)-100),
+        'distance_p3_p4': distance_P3_P4_nm,
+        'distance_to_P3_nm': (distance_to_P3 * 0.539957),
+        'distance_to_P4_nm': (distance_to_P4 * 0.539957),
     }
     
     return results

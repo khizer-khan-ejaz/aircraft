@@ -269,11 +269,19 @@
                     </select>
                 </div>
                 <div class="input-group">
-                    <label for="reference">ERC Reference:</label>
+                    <label for="reference">airport</label>
                     <select id="airport" name="airport" required>
                         <option value="" disabled selected>select number of airport </option>
                         <option value="3">3</option>
                         <option value="4">4</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="reference">marks</label>
+                    <select id="marks" name="marks" required>
+                        <option value="" disabled selected>select number of airport </option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
                     </select>
                 </div>
                 <button type="submit"><i class="fas fa-calculator"></i> Generate Question & Map</button>
@@ -331,12 +339,13 @@
                     return;
                 }
                 var airport=$('#airport').val().trim().toUpperCase();
+                var marks=$('#marks').val().trim().toUpperCase();
                 // Make AJAX request
                 $.ajax({
                     url: '/generate_question',
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ reference: reference,num_airports:airport }),
+                    data: JSON.stringify({ reference: reference,num_airports:airport,marks:marks }),
                     success: function(data) {
                         $('#loader').hide();
                         

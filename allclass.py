@@ -185,7 +185,7 @@ class AirportQuestionGenerator:
                 if min(angle_dep, angle_arr, angle_eland2) < 5:
                     continue
                 
-                eland = dep
+                eland = arr
                 shape_type = "triangle"
                 
                 return {
@@ -258,7 +258,7 @@ class AirportQuestionGenerator:
                 if num_airports == 3:
                     dep = selected["dep"]
                     arr = selected["arr"]
-                    eland = dep
+                    eland = arr
                     eland2 = selected["eland2"]
                 
                 cruise_level = random.choice([150, 170, 190, 210, 230])
@@ -267,10 +267,11 @@ class AirportQuestionGenerator:
                 
                 track = self.get_track_angle(dep, arr)
                 wind_dir_normal = random.randint(20, 36) * 10
-                wind_speed_normal = int(40 + random.random() * 30)*5
+                wind_speed_normal = int(random.uniform(8, 17)) * 5
+
                 wind_dir_single = random.randint(20, 36) * 10
-                raw_speed = wind_speed_normal * (0.8 + random.random() * 0.4)
-                wind_speed_single = min(int(round(raw_speed / 5) * 5), 95)
+                raw_speed = (wind_speed_normal+10) * (0.8 + random.random() * 0.4)
+                wind_speed_single = min(int(round(raw_speed / 5) * 5), 90)+10
                 P1 = (dep.lat, dep.long)
                 P2 = (arr.lat, arr.long)
                 P3 = (eland.lat, eland.long)
