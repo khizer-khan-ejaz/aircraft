@@ -389,14 +389,7 @@
                                 <div class="param-title">Single Engine TAS</div>
                                 <div class="param-value">${details.tas_single_engine} kt</div>
                             </div>
-                            <div class="param-card">
-                                <div class="param-title">Normal Wind</div>
-                                <div class="param-value">${details.wind_normal.direction}°/${details.wind_normal.speed} kt</div>
-                            </div>
-                            <div class="param-card">
-                                <div class="param-title">Single Engine Wind</div>
-                                <div class="param-value">${details.wind_single_engine.direction}°/${details.wind_single_engine.speed} kt</div>
-                            </div>
+                            
                             <div class="param-card">
                                 <div class="param-title">Configuration Type</div>
                                 <div class="param-value">${details.shape_type}</div>
@@ -413,10 +406,17 @@
                                 <div class="param-title">distance between the intersection point to p3  is </div>
                                 <div class="param-value">${details.geodesic.distance_to_P3_nm}</div>
                             </div>
+                           
                              <div class="param-card">
                                 <div class="param-title">Final Answers is </div>
                                 <div class="param-value">${details.geodesic.distance_to_P1_nm}</div>
                             </div>
+                            <div class="param-card">
+                                <div class="param-title">times diferencs </div>
+                                <div class="param-value">${details.time} sec </div>
+                            </div>
+
+                            
                         `;
                         $('#parameters').html(parametersHtml);
                         

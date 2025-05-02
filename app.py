@@ -205,6 +205,7 @@ def generate_question_endpoint():
         tas_normal = question.details.tas_single_engine
         wind_speed = question.details.wind_single_engine['speed']
         wind_dir = question.details.wind_single_engine['direction'] % 360
+       
         
         P1 = (dep.lat, dep.long)
         P2 = (arr.lat, arr.long)
@@ -213,14 +214,23 @@ def generate_question_endpoint():
         geodesic_results = calculate_geodesic(P1, P2, P3, P4, tas_normal, wind_speed, wind_dir)
         distance_p3 = geodesic_results['distance_to_P3_nm_1']
         distance_p4 = geodesic_results['distance_to_P4_nm']
-        cousefromhome=vincenty_inverse(dep.lat, dep.long, arr.lat, arr.long)[1]
+        critical_point_data = geodesic_results.get('critical_point')
+        if isinstance(critical_point_data, (list, tuple)) and len(critical_point_data) == 2:
+            critical_point_obj = Point(critical_point_data[0], critical_point_data[1])
+        elif hasattr(critical_point_data, 'lat') and hasattr(critical_point_data, 'long'):
+            critical_point_obj = critical_point_data
+        else:
+            logging.error(f"Invalid critical_point type: {type(critical_point_data)}")
+            return jsonify({'error': 'Invalid critical point data'}), 500
+
+        cousefromhome=vincenty_inverse(land1.lat, land1.long, critical_point_obj.lat, critical_point_obj.long)[1]
         
-        cousefromland1=vincenty_inverse(arr.lat,arr.long, dep.lat, dep.long)[0]
+        cousefromland1=vincenty_inverse(critical_point_obj.lat,critical_point_obj.long, land2.lat, land2.long)[0]
         gs=calculate_wind_effects(cousefromhome, tas_normal, wind_dir, wind_speed)['groundspeed']
         cs=calculate_wind_effects(cousefromland1, tas_normal, wind_dir, wind_speed)['groundspeed']
         time_p3=distance_p3/gs
         time_p4=distance_p4/cs        # Calculate geodesic results, which include the ground speed calculations
-        time=time_p3-time_p4
+        time=(time_p3-time_p4)*3600
         if not geodesic_results:
             logging.error("Geodesic calculation failed after retries")
             return jsonify({'error': 'Failed to generate valid geodesic configuration. Please try again.'}), 500
@@ -268,7 +278,7 @@ def generate_question_endpoint():
                 'time1' : time_p3,
                 'distance_p4':distance_p4,
                 'time2' : time_p4,
-                'time':time,
+                'time':int(time),
                 'course_from_home': cousefromhome,
                 'course_from_land1': cousefromland1
             }

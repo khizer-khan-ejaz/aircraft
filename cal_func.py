@@ -5,6 +5,10 @@ import logging
 from allclass import *
 from sample_airport import *
 from folium.plugins import MousePosition
+class Point:
+    def __init__(self, lat, long):
+        self.lat = lat
+        self.long = long
 def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
     geod = Geodesic.WGS84
     g_P3_P4 = geod.Inverse(P3[0], P3[1], P4[0], P4[1])
@@ -128,7 +132,7 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
     if perp_nm_p1p2_intersection is None:
         logging.warning("No perpendicular intersection with P1-P2")
         return None
-    
+    critical_point=(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1])
     distance_to_P1 = geod.Inverse(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1], P1[0], P1[1])['s12'] / 1000
     distance_to_P3= int(geod.Inverse(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1], P3[0], P3[1])['s12'] / 1000)
     distance_to_P4=int(geod.Inverse(perp_nm_p1p2_intersection[0], perp_nm_p1p2_intersection[1], P4[0], P4[1])['s12'] / 1000)
@@ -144,12 +148,11 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
     
     # Add IFR Low chart as an additional tile layer
     folium.TileLayer(
-    tiles='https://tileservice.charts.noaa.gov/tiles/50k_enrl/{z}/{x}/{y}.png',
-    attr='FAA - IFR Low Enroute Charts',
-    name='IFR Low Altitude',
-    overlay=False,
-    min_zoom=0,
-    max_zoom=10  # Adjust based on server support   
+        tiles='https://tiles.openaip.net/geowebcache/service/tms/1.0.0/ifrlow@EPSG:900913@png/{z}/{x}/{y}.png',
+        attr='OpenAIP IFR Low Chart',
+        name='IFR Low Chart',
+        overlay=True,
+        control=True
     ).add_to(my_map)
     # Add layer control to toggle between tile layers
     folium.LayerControl().add_to(my_map)
@@ -212,6 +215,7 @@ def calculate_geodesic(P1, P2, P3, P4, TAS, wind_speed, degree):
         'distance_p3_p4': distance_P3_P4_nm,
         'distance_to_P3_nm_1': (distance_to_P3 * 0.539957),
         'distance_to_P4_nm': (distance_to_P4 * 0.539957),
+        'critical_point':critical_point,
     }
     
     return results
