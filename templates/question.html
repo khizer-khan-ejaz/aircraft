@@ -86,13 +86,13 @@
         .input-form {
             display: flex;
             gap: 10px;
-            align-items: center;
+            align-items: flex-end; /* Align items to bottom for button */
             flex-wrap: wrap;
         }
         
         .input-group {
             flex: 1;
-            min-width: 250px;
+            min-width: 200px; /* Adjusted min-width */
         }
         
         label {
@@ -101,12 +101,13 @@
             font-weight: 500;
         }
         
-        input[type="text"] {
+        select, input[type="text"] { /* Style select same as input */
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
             border-radius: var(--border-radius);
             font-size: 1rem;
+            background-color: white; /* Ensure select bg is white */
         }
         
         button {
@@ -122,6 +123,7 @@
             align-items: center;
             gap: 8px;
             transition: background-color 0.3s;
+            height: 48.4px; /* Match input height */
         }
         
         button:hover {
@@ -165,6 +167,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 1.5rem;
         }
         
         .question {
@@ -173,29 +176,33 @@
             border-radius: var(--border-radius);
             margin-bottom: 20px;
             border-left: 4px solid var(--accent-color);
+            line-height: 1.7;
         }
         
         .params-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjusted for better fit */
+            gap: 15px;
         }
         
         .param-card {
-            background-color: var(--light-bg);
+            background-color: #fdfdff; /* Slightly off-white for cards */
             padding: 15px;
             border-radius: var(--border-radius);
             border-left: 4px solid var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         
         .param-title {
             font-weight: 600;
             margin-bottom: 5px;
             color: var(--primary-color);
+            font-size: 0.9rem;
         }
         
         .param-value {
-            font-size: 1.1rem;
+            font-size: 1rem;
+            word-wrap: break-word;
         }
         
         .map-container {
@@ -232,11 +239,18 @@
         @media (max-width: 768px) {
             .input-form {
                 flex-direction: column;
+                align-items: stretch; /* Stretch items to full width */
+            }
+            .input-group {
+                min-width: 100%; /* Full width on mobile */
             }
             
             button {
                 width: 100%;
                 justify-content: center;
+            }
+            .params-grid {
+                grid-template-columns: 1fr; /* Single column on mobile */
             }
         }
     </style>
@@ -245,8 +259,8 @@
     <header>
         <div class="container">
             <div class="logo">
-                <i class="fas fa-plane"></i>
-                <h1>Flight Critical Point Calculator</h1>
+                <i class="fas fa-plane-departure"></i>
+                <h1>Critical Point Calculator</h1>
             </div>
         </div>
     </header>
@@ -257,7 +271,7 @@
                 <div class="input-group">
                     <label for="reference">ERC Reference:</label>
                     <select id="reference" name="reference" required>
-                        <option value="" disabled selected>Select an option</option>
+                        <option value="" disabled selected>Select Chart</option>
                         <option value="L1">L1</option>
                         <option value="L2">L2</option>
                         <option value="L3">L3</option>
@@ -269,22 +283,22 @@
                     </select>
                 </div>
                 <div class="input-group">
-                    <label for="reference">airport</label>
-                    <select id="airport" name="airport" required>
-                        <option value="" disabled selected>select number of airport </option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
+                    <label for="airport">No. of Airports:</label>
+                    <select id="airport" name="num_airports" required>
+                        <option value="" disabled selected>Select Count</option>
+                        <option value="3">3 (Triangle)</option>
+                        <option value="4">4 (Quadrilateral)</option>
                     </select>
                 </div>
                 <div class="input-group">
-                    <label for="reference">marks</label>
+                    <label for="marks">Marks:</label>
                     <select id="marks" name="marks" required>
-                        <option value="" disabled selected>select number of airport </option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
+                        <option value="" disabled selected>Select Marks</option>
+                        <option value="2">2 Marks</option>
+                        <option value="3">3 Marks</option>
                     </select>
                 </div>
-                <button type="submit"><i class="fas fa-calculator"></i> Generate Question & Map</button>
+                <button type="submit"><i class="fas fa-calculator"></i> Generate</button>
             </form>
         </div>
         
@@ -294,22 +308,29 @@
         
         <div id="loader" class="loader">
             <div class="spinner"></div>
-            <p>Calculating flight details...</p>
+            <p>Calculating flight details and generating map...</p>
         </div>
         
         <div id="results" class="results">
             <div class="card flight-details">
-                <h2 class="section-title"><i class="fas fa-info-circle"></i> Flight Details</h2>
+                <h2 class="section-title"><i class="fas fa-scroll"></i> Generated Question</h2>
                 <div id="question" class="question"></div>
                 
-                <h3 class="section-title"><i class="fas fa-clipboard-list"></i> Parameters</h3>
+                <h3 class="section-title"><i class="fas fa-cogs"></i> Key Parameters</h3>
                 <div id="parameters" class="params-grid"></div>
             </div>
             
             <div class="card">
-                <h2 class="section-title"><i class="fas fa-map-marked-alt"></i> Flight Map</h2>
+                <h2 class="section-title"><i class="fas fa-map-marked-alt"></i> Interactive Flight Map</h2>
                 <div id="mapContainer" class="map-container">
-                    <p>Map loading...</p>
+                    <!-- Map will be loaded here -->
+                </div>
+            </div>
+
+             <div class="card" id="stepsCard" style="display:none;">
+                <h2 class="section-title"><i class="fas fa-shoe-prints"></i> Calculation Steps</h2>
+                <div id="calculationSteps">
+                    <!-- Steps will be loaded here -->
                 </div>
             </div>
         </div>
@@ -317,155 +338,206 @@
     
     <footer>
         <div class="container">
-            <p>© 2025 Flight Critical Point Calculator | Aviation Planning Tool</p>
+            <p>© 2025 Flight Critical Point Calculator</p>
         </div>
     </footer>
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Leaflet JS is not directly used by this HTML, but included if map HTML relies on it being globally available.
+         However, the map is in an iframe, so it should be self-contained. -->
+    <!-- <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script> -->
     <script>
         $(document).ready(function() {
-            let previousUrl = null; // Track previous Blob URL to prevent memory leaks
+            let previousMapUrl = null; 
 
             $('#generateForm').submit(function(e) {
                 e.preventDefault();
                 
-                // Reset UI state
                 $('#errorMessage').hide();
                 $('#results').hide();
+                $('#stepsCard').hide();
                 $('#loader').show();
-                
-                var reference = $('#reference').val().trim().toUpperCase();
+                $('#mapContainer').html('<p style="text-align:center; padding-top:50px;">Map loading...</p>'); // Reset map container
+                $('#calculationSteps').empty();
+
+
+                var reference = $('#reference').val();
+                var num_airports_str = $('#airport').val();
+                var marks_str = $('#marks').val();
+
                 if (!reference) {
-                    showError('Please enter a valid reference (e.g., L1)');
+                    showError('Please select a reference chart.');
                     return;
                 }
-                var airport=$('#airport').val().trim().toUpperCase();
-                var marks=$('#marks').val().trim().toUpperCase();
-                // Make AJAX request
+                if (!num_airports_str) {
+                    showError('Please select the number of airports.');
+                    return;
+                }
+                if (!marks_str) {
+                    showError('Please select the number of marks.');
+                    return;
+                }
+
+                var num_airports = parseInt(num_airports_str, 10);
+                var marks = parseInt(marks_str, 10);
+
                 $.ajax({
-                    url: '/generate_question',
+                    url: '/generate_question', // Ensure this matches your Flask endpoint
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ reference: reference,num_airports:airport,marks:marks }),
+                    data: JSON.stringify({ 
+                        reference: reference.trim().toUpperCase(),
+                        num_airports: num_airports,
+                        marks: marks
+                    }),
                     success: function(data) {
                         $('#loader').hide();
                         
-                        if (!data || !data.details) {
-                            showError('Invalid response from server');
+                        if (!data || !data.question_details_raw || !data.geodesic_calculations_and_map) {
+                            showError('Invalid response structure from server. Check console for details.');
+                            console.error("Invalid data structure received:", data);
                             return;
                         }
                         
-                        // Display question
-                        const details = data.details;
-                        console.log(details)
-                        $('#question').html(`<p>${data.question}</p>`);
+                        const qDetails = data.question_details_raw;
+                        const geoCalculations = data.geodesic_calculations_and_map;
+
+                        console.log("Full Response Data:", data);
+                        console.log("Question Details Raw:", qDetails);
+                        console.log("Geodesic Calculations:", geoCalculations);
+
+                        $('#question').html(`<p>${data.question_text}</p>`);
                         
-                        // Display parameters
                         const parametersHtml = `
                             <div class="param-card">
                                 <div class="param-title">Departure</div>
-                                <div class="param-value">${details.departure_name} (${details.departure})</div>
+                                <div class="param-value">${qDetails.departure_name} (${qDetails.departure_code}) <br><small>Lat: ${qDetails.dep_lat.toFixed(4)}, Lon: ${qDetails.dep_lon.toFixed(4)}</small></div>
                             </div>
                             <div class="param-card">
                                 <div class="param-title">Arrival</div>
-                                <div class="param-value">${details.arrival_name} (${details.arrival})</div>
+                                <div class="param-value">${qDetails.arrival_name} (${qDetails.arrival_code}) <br><small>Lat: ${qDetails.arr_lat.toFixed(4)}, Lon: ${qDetails.arr_lon.toFixed(4)}</small></div>
                             </div>
                             <div class="param-card">
                                 <div class="param-title">Alternate 1</div>
-                                <div class="param-value">${details.land1_name} (${details.land1})</div>
+                                <div class="param-value">${qDetails.land1_name} (${qDetails.land1_code}) <br><small>Lat: ${qDetails.land1_lat.toFixed(4)}, Lon: ${qDetails.land1_lon.toFixed(4)}</small></div>
                             </div>
                             <div class="param-card">
                                 <div class="param-title">Alternate 2</div>
-                                <div class="param-value">${details.land2_name} (${details.land2})</div>
+                                <div class="param-value">${qDetails.land2_name} (${qDetails.land2_code}) <br><small>Lat: ${qDetails.land2_lat.toFixed(4)}, Lon: ${qDetails.land2_lon.toFixed(4)}</small></div>
                             </div>
                             <div class="param-card">
                                 <div class="param-title">Cruise Level</div>
-                                <div class="param-value">FL${details.cruise_level}</div>
+                                <div class="param-value">FL${qDetails.cruise_level}</div>
                             </div>
                             <div class="param-card">
                                 <div class="param-title">Normal TAS</div>
-                                <div class="param-value">${details.tas_normal} kt</div>
+                                <div class="param-value">${qDetails.tas_normal} kt</div>
+                            </div>
+                             <div class="param-card">
+                                <div class="param-title">Normal Wind</div>
+                                <div class="param-value">${qDetails.wind_normal.direction}°T / ${qDetails.wind_normal.speed} kt</div>
                             </div>
                             <div class="param-card">
                                 <div class="param-title">Single Engine TAS</div>
-                                <div class="param-value">${details.tas_single_engine} kt</div>
+                                <div class="param-value">${qDetails.tas_single_engine} kt</div>
                             </div>
-                            
+                            <div class="param-card">
+                                <div class="param-title">Single Engine Wind</div>
+                                <div class="param-value">${qDetails.wind_single_engine.direction}°T / ${qDetails.wind_single_engine.speed} kt</div>
+                            </div>
                             <div class="param-card">
                                 <div class="param-title">Configuration Type</div>
-                                <div class="param-value">${details.shape_type}</div>
+                                <div class="param-value">${qDetails.shape_type}</div>
                             </div>
-                             <div class="param-card">
-                                <div class="param-title">distance between the intersection point to p3  is </div>
-                                <div class="param-value">${details.geodesic.distance_to_P3_nm}</div>
-                            </div>
-                             <div class="param-card">
-                                <div class="param-title">how many steps from interspection  </div>
-                                <div class="param-value">${details.geodesic.distance_to_degree}</div>
+                            <hr style="grid-column: 1 / -1; border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+                            <div class="param-card">
+                                <div class="param-title">Dist P3 to Initial Intersection</div>
+                                <div class="param-value">${geoCalculations.dist_initial_intersect_to_P3_nm !== undefined && geoCalculations.dist_initial_intersect_to_P3_nm !== null ? geoCalculations.dist_initial_intersect_to_P3_nm.toFixed(1) + ' nm' : 'N/A'}</div>
                             </div>
                             <div class="param-card">
-                                <div class="param-title">distance between the intersection point to p3  is </div>
-                                <div class="param-value">${details.geodesic.distance_to_P3_nm}</div>
+                                <div class="param-title">Offset Distance (${geoCalculations.degree_param_used}°)</div>
+                                <div class="param-value">${geoCalculations.offset_distance_nm !== undefined && geoCalculations.offset_distance_nm !== null ? geoCalculations.offset_distance_nm.toFixed(1) + ' nm' : 'N/A'}</div>
                             </div>
-                           
-                             <div class="param-card">
-                                <div class="param-title">Final Answers is </div>
-                                <div class="param-value">${details.geodesic.distance_to_P1_nm}</div>
+                            <div class="param-card" style="background-color: var(--success-color); color: white;">
+                                <div class="param-title" style="color: white;">CP Distance from P1 (ANSWER)</div>
+                                <div class="param-value">${geoCalculations.distance_to_P1_nm!== undefined && geoCalculations.distance_to_P1_nm !== null ? geoCalculations.distance_to_P1_nm.toFixed(1) + ' nm' : 'N/A'}</div>
                             </div>
+                             <hr style="grid-column: 1 / -1; border: 0; border-top: 1px solid #eee; margin: 10px 0;">
                             <div class="param-card">
-                                <div class="param-title">times diferencs </div>
-                                <div class="param-value">${details.time} sec </div>
+                                <div class="param-title">Dist P3-P4</div>
+                                <div class="param-value">${geoCalculations.distance_p3_p4_nm !== undefined && geoCalculations.distance_p3_p4_nm !== null ? geoCalculations.distance_p3_p4_nm.toFixed(1) + ' nm' : 'N/A'}</div>
                             </div>
-
-                            
+                             <div class="param-card">
+                                <div class="param-title">Dist CP to P3</div>
+                                <div class="param-value">${geoCalculations.distance_CP_to_P3_nm !== undefined && geoCalculations.distance_CP_to_P3_nm !== null ? geoCalculations.distance_CP_to_P3_nm.toFixed(1) + ' nm' : 'N/A'}</div>
+                            </div>
+                             <div class="param-card">
+                                <div class="param-title">Dist CP to P4</div>
+                                <div class="param-value">${geoCalculations.distance_CP_to_P4_nm !== undefined && geoCalculations.distance_CP_to_P4_nm !== null ? geoCalculations.distance_CP_to_P4_nm.toFixed(1) + ' nm' : 'N/A'}</div>
+                            </div>
                         `;
                         $('#parameters').html(parametersHtml);
                         
-                        // Display the map
-                        if (data.details.geodesic && data.details.geodesic.map_html) {
-                            // Clean up previous Blob URL
-                            if (previousUrl) {
-                                URL.revokeObjectURL(previousUrl);
+                        if (geoCalculations.map_html) {
+                            if (previousMapUrl) {
+                                URL.revokeObjectURL(previousMapUrl);
                             }
-                            
-                            const mapHtml = data.details.geodesic.map_html;
+                            const mapHtml = geoCalculations.map_html;
                             const blob = new Blob([mapHtml], {type: 'text/html'});
                             const url = URL.createObjectURL(blob);
-                            previousUrl = url;
+                            previousMapUrl = url;
                             
-                            $('#mapContainer').html(`
-                                <iframe 
-                                    src="${url}"
-                                    style="width: 100%; height: 100%; border: none;"
-                                    allowfullscreen
-                                    webkitallowfullscreen
-                                    mozallowfullscreen
-                                ></iframe>
-                            `);
+                            $('#mapContainer').html(`<iframe src="${url}" style="width: 100%; height: 100%; border: none;" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>`);
                             
-                            // Debug: Log when iframe loads
                             $('#mapContainer iframe').on('load', function() {
                                 console.log('Map iframe loaded successfully');
+                            }).on('error', function() {
+                                console.error('Map iframe failed to load');
+                                $('#mapContainer').html('<p style="text-align:center; padding:20px; color:red;">Error loading map iframe.</p>');
                             });
                         } else {
-                            $('#mapContainer').html(`
-                                <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:15px;">
-                                    <i class="fas fa-map-marked-alt" style="font-size:48px;color:#ccc;"></i>
-                                    <p>No map data available for this reference.</p>
-                                </div>
-                            `);
+                            $('#mapContainer').html(`<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:15px;"><i class="fas fa-map-slash" style="font-size:48px;color:#ccc;"></i><p>No map data available.</p></div>`);
+                        }
+
+                        // Display calculation steps if available
+                        if (geoCalculations.steps && Array.isArray(geoCalculations.steps) && geoCalculations.steps.length > 0) {
+                            let stepsHtml = '<ol style="padding-left: 20px;">';
+                            geoCalculations.steps.forEach(step => {
+                                stepsHtml += `<li style="margin-bottom: 10px;"><strong>${step.title}:</strong><br>${step.description}</li>`;
+                            });
+                            stepsHtml += '</ol>';
+                            $('#calculationSteps').html(stepsHtml);
+                            $('#stepsCard').fadeIn(300);
                         }
                         
-                        // Show results section
                         $('#results').fadeIn(300);
-                        
-                        // Scroll to results
                         $('html, body').animate({
-                            scrollTop: $("#results").offset().top - 20
+                            scrollTop: $("#results").offset().top - 20 /* Adjust for fixed header if any */
                         }, 500);
+
                     },
-                    error: function(xhr) {
+                    error: function(xhr, status, error) {
                         $('#loader').hide();
-                        showError(xhr.responseJSON?.error || 'Error connecting to the server. Please try again.');
+                        let errorMsg = 'An error occurred. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        } else if (xhr.responseText) {
+                            try {
+                                // Attempt to extract a more meaningful message from HTML error pages (e.g., Werkzeug)
+                                const SCRIPT_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+                                const STYLE_REGEX = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi;
+                                let cleanedText = xhr.responseText.replace(SCRIPT_REGEX, "").replace(STYLE_REGEX, "");
+                                var $temp = $('<div>').html(cleanedText); // Use a div to parse
+                                var h1Text = $temp.find('h1').first().text();
+                                var pText = $temp.find('p').first().text();
+                                if (h1Text) errorMsg = h1Text;
+                                else if (pText && pText.length < 200) errorMsg = pText; // Take first p if not too long
+                            } catch(e){
+                                console.warn("Could not parse error responseText as HTML.", e);
+                            }
+                        } else if (error) {
+                            errorMsg = `Error: ${error}`;
+                        }
+                        showError(errorMsg);
+                        console.error("AJAX Error Info:", {xhr: xhr, status: status, error: error});
                     }
                 });
             });

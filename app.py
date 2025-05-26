@@ -9,8 +9,57 @@ from typing import Dict, List, NamedTuple
 
 from geographiclib.geodesic import Geodesic
 import scipy.optimize as optimize
-
+from cal_func import calculate_geodesic
+import firebase_admin
+from firebase_admin import credentials, firestore
 # Import these libraries if available in your environment
+cred = credentials.Certificate({
+    "type": "service_account",
+    "project_id": "airplane-49087",
+    "private_key_id": "c52df395076eb737731760f67a5a204bfee225e9",
+    "private_key": """-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDejFv78wrvLc6n
+CaAh7cMDGZZHNzdXW70KSMTXfjjlrROqTOdYXzo67v3urpgL2lRPyIWjcYMefL5B
+PbCq6VQODs9rMvRmXbSHmf+0knJoVnWdU0bslQVj60zYsSmkwItOBjNM8ghx0Cmc
+v1ksBppil68NFz69HkKIQ4fu3awCc1wrjsVWOce0vEJeBBRHpLpj7JYo0yRxcdvP
+b8S9lVJvby/Peg9n+upkkz7XGebi/F6AB6iFvBAu/tnajOCqkzmgOxOvsBwk/m/K
+cDsggdK3+2exmvE9UbB0nHQOkziWMgEAmp2VZDm0OAoco2/IMfWe0lGkU2hpCT8G
+7JtYtuVdAgMBAAECggEABwTgRdMFjkOgl+4aydco5mkhLz/TlALFtJRU+QL3Im9S
+BnYEeeoO+RrekW+aRg1tyVJmvJ/w5b5DdeVPNCTFzOe0rQnfYXclIX2+7eAMkbPg
+Y8TjoMSWde9O7iqwSIz2F9DkP1IG6CgLl/EFC/ltVxy3na8VAHv61zdiCyucqDsS
+IrK2IYw0HumKIkXncuLG1fnXZT6w3g4VmkgcS3l/MGe+QKj3yiZg4QFrOESvX4eX
+i4yTkUPL0HDN4Wv/3PpvcZtZKjuyhQwMT2maRW11CDlY1F0g0xhD2fXWBkTkoX9+
+TLFN1ln/O2AT2OWo+dA1O3gBKykhcURp6JXux6MPNQKBgQD7Itl2xL0NVfQSYn5F
+GjC2+FDOL/RKrv+3/fGGyRD6GmEgXWasMKZkYpO4bZ+FeQ7Y3KFYmkzHydQt7q1H
+ypgjBec946NZBRAAVe78yZe8usnfgFx7YimdpqR4rlcuAf0/YUdA1/WgVu3IsgrZ
+Qh+HGkvoxDib0qa8/O9pFC+mzwKBgQDi28Tu7Fo28zKR2RZgun3VAcGCeyarmDf4
+66lFUFD9EPH9ENNNCD74RlO3P4Ec5ch7N6JdkByKYOEQddu49IDLiz5QNrPeJ+lQ
+MAarkoU22VqFIcSRUskWHuHQgqzhyJRk9XN/df2TIDF1MHJ1JjBGLqq+MDL/z/5K
+bhSPFds8EwKBgQCniLAaE1UrOFQCj8I8xyQIa888PbFywRvG2pntmOTCdCanOKft
+5uaZwUlal4b7u66z7TuVqBngjjwGCFuAsR6c/qstFlc6Y64xCyLLcJDRTqqtdyw7
+A1lP2oOOHn/6KUmQpoyqLWem91bZtCyYkwwFTP2m4oABM54YJYRxTQ4c8QKBgDHe
+zCkVzjM8PUawqWm0NYtI6ohLmFGqkctnyvtQz60CN6BBPaI2iNk9ZJPpIvH+VZc4
+wLm+v3dwGqnqrtW28kVMo/MwQ1Q4A+M724uGF0DagTq5FKQ5xbjWKyASSf0Mggq7
+pptDje306spvTwoPzhbvlVtf7yYrTCSClIRr8pj/AoGBALK/fdhPwOcWzcBFKykr
+26Zov7rtLPVV8ZMO+c0X8u1SNabsB2uH1n+dhXNf83McgaoGRyhtvo3d7gUeRSms
+vvYcqwsdJX880ZWIzISEeCtarZCaijh6UeFUqlZsOzLqNc6KrU1P/TmM1IBa7aJT
+tWdLf+ERmSfQ4NeSmspLlFjv
+-----END PRIVATE KEY-----""",  # ✅ Use triple quotes for multi-line strings
+    "client_email": "firebase-adminsdk-fbsvc@airplane-49087.iam.gserviceaccount.com",
+    "client_id": "107082013090178902883",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40airplane-49087.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+})
+
+# 🔹 Step 2: Initialize Firebase App
+firebase_admin.initialize_app(cred)
+
+# 🔹 Step 3: Now safely use Firestore
+db = firestore.client()
+print("✅ Firebase & Firestore initialized successfully!")
 try:
     from pygeomag import GeoMag
     geo = GeoMag()
@@ -29,6 +78,113 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:5000"]}})
 
 # ---- Adding wind effect and ground speed calculation functions from first code ----
+class Navigation:
+    def get_track_angle(self, dep, arr, magnetic=True, date=None):
+        # Validate inputs
+        if not (-90 <= dep.lat <= 90 and -180 <= dep.long <= 180 and 
+                -90 <= arr.lat <= 90 and -180 <= arr.long <= 180):
+            raise ValueError("Invalid latitude or longitude")
+        if (dep.lat, dep.long) == (arr.lat, arr.long):
+            return 0.0
+
+        # Calculate true bearing using great-circle formula
+        lat1 = math.radians(dep.lat)
+        lon1 = math.radians(dep.long)
+        lat2 = math.radians(arr.lat)
+        lon2 = math.radians(arr.long)
+        
+        dlon = lon2 - lon1
+        y = math.sin(dlon) * math.cos(lat2)
+        x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+        
+        true_bearing = math.degrees(math.atan2(y, x))
+        true_bearing = (true_bearing + 360) % 360
+        
+        if not magnetic:
+            return round(true_bearing, 2)
+        
+        # Convert to magnetic bearing
+        magnetic_variation = self.get_magnetic_variation(dep.lat, dep.long, date)
+        magnetic_bearing = (true_bearing - magnetic_variation + 360) % 360
+        
+        return round(magnetic_bearing, 2)
+
+    def get_magnetic_variation(self, lat, lon, date=None):
+        if geo is None:
+            print("GeoMag unavailable. Using fallback magnetic variation (-12.0 for New York).")
+            return -12.0  # Fallback for New York, 2023
+        try:
+            date = date or datetime.datetime.utcnow()
+            dec_year = self.decimal_year(date)
+            result = geo.calculate(glat=lat, glon=lon, alt=0, time=dec_year)
+            return float(result.dec)
+        except Exception as e:
+            print(f"Error calculating magnetic variation: {e}")
+            return -12.0  # Fallback for New York
+
+    def decimal_year(self, date):
+        """Convert a datetime object to decimal year."""
+        year_start = datetime.datetime(date.year, 1, 1)
+        year_end = datetime.datetime(date.year + 1, 1, 1)
+        year_length = (year_end - year_start).total_seconds()
+        seconds_into_year = (date - year_start).total_seconds()
+        return date.year + seconds_into_year / year_length
+
+    def get_midpoint(self, dep, arr):
+        """Calculate the geographic midpoint between two points."""
+        # Convert to radians
+        lat1 = math.radians(dep.lat)
+        lon1 = math.radians(dep.long)
+        lat2 = math.radians(arr.lat)
+        lon2 = math.radians(arr.long)
+        
+        # Convert to Cartesian coordinates
+        x1 = math.cos(lat1) * math.cos(lon1)
+        y1 = math.cos(lat1) * math.sin(lon1)
+        z1 = math.sin(lat1)
+        x2 = math.cos(lat2) * math.cos(lon2)
+        y2 = math.cos(lat2) * math.sin(lon2)
+        z2 = math.sin(lat2)
+        
+        # Average coordinates
+        x = (x1 + x2) / 2
+        y = (y1 + y2) / 2
+        z = (z1 + z2) / 2
+        
+        # Convert back to lat/long
+        lon = math.atan2(y, x)
+        hyp = math.sqrt(x * x + y * y)
+        lat = math.atan2(z, hyp)
+        
+        # Convert to degrees
+        mid_lat = math.degrees(lat)
+        mid_lon = math.degrees(lon)
+        
+        return Point(round(mid_lat, 4), round(mid_lon, 4))
+
+    def get_route_magnitude(self, dep, arr, unit='km'):
+        """Calculate great-circle distance between two points."""
+        # Earth's radius (km)
+        R = 6371.0  # Use 3440.1 for nautical miles, 3958.8 for statute miles
+        
+        lat1 = math.radians(dep.lat)
+        lon1 = math.radians(dep.long)
+        lat2 = math.radians(arr.lat)
+        lon2 = math.radians(arr.long)
+        
+        # Haversine formula
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        distance = R * c
+        
+        if unit == 'nm':
+            distance *= 0.539957  # Convert km to nautical miles
+        elif unit == 'mi':
+            distance *= 0.621371  # Convert km to statute miles
+            
+        return round(distance, 2)
 
 def decimal_year(date: datetime.datetime) -> float:
     """Calculate decimal year from datetime object."""
@@ -38,135 +194,204 @@ def decimal_year(date: datetime.datetime) -> float:
     elapsed = (date - year_start).total_seconds()
     return date.year + elapsed / year_length
 
-def vincenty_inverse(lat1, lon1, lat2, lon2, max_iter=200, tol=1e-12):
-    """Calculate distance, initial and final bearing between two points using the Vincenty formula."""
-    a = 6378137.0
-    f = 1 / 298.257223563
-    b = (1 - f) * a
 
-    phi1, phi2 = radians(lat1), radians(lat2)
-    L = radians(lon2 - lon1)
-    U1 = math.atan((1 - f) * math.tan(phi1))
-    U2 = math.atan((1 - f) * math.tan(phi2))
-    sinU1, cosU1 = sin(U1), cos(U1)
-    sinU2, cosU2 = sin(U2), cos(U2)
-
-    lamb = L
-    for _ in range(max_iter):
-        sin_lambda, cos_lambda = sin(lamb), cos(lamb)
-        sin_sigma = sqrt((cosU2 * sin_lambda) ** 2 +
-                        (cosU1 * sinU2 - sinU1 * cosU2 * cos_lambda) ** 2)
-        if sin_sigma == 0:
-            return 0.0, 0.0, 0.0
-        cos_sigma = sinU1 * sinU2 + cosU1 * cosU2 * cos_lambda
-        sigma = atan2(sin_sigma, cos_sigma)
-        sin_alpha = cosU1 * cosU2 * sin_lambda / sin_sigma
-        cos2_alpha = 1 - sin_alpha ** 2
-        cos2_sigma_m = (cos_sigma - 2 * sinU1 * sinU2 / cos2_alpha) if cos2_alpha != 0 else 0
-        C = f / 16 * cos2_alpha * (4 + f * (4 - 3 * cos2_alpha))
-        prev_lamb = lamb
-        lamb = L + (1 - C) * f * sin_alpha * (
-            sigma + C * sin_sigma * (cos2_sigma_m + C * cos_sigma *
-            (-1 + 2 * cos2_sigma_m ** 2)))
-        if abs(lamb - prev_lamb) < tol:
-            break
-    else:
-        raise ValueError("Vincenty algorithm failed to converge")
-
-    u_sq = cos2_alpha * (a ** 2 - b ** 2) / (b ** 2)
-    A = 1 + u_sq / 16384 * (4096 + u_sq * (-768 + u_sq * (320 - 175 * u_sq)))
-    B = u_sq / 1024 * (256 + u_sq * (-128 + u_sq * (74 - 47 * u_sq)))
-    delta_sigma = B * sin_sigma * (cos2_sigma_m + B / 4 * (
-        cos_sigma * (-1 + 2 * cos2_sigma_m ** 2) -
-        B / 6 * cos2_sigma_m * (-3 + 4 * sin_sigma ** 2) * (-3 + 4 * cos2_sigma_m ** 2)))
-
-    distance = b * A * (sigma - delta_sigma)
-
-    alpha1 = atan2(cosU2 * sin(lamb),
-                cosU1 * sinU2 - sinU1 * cosU2 * cos(lamb))
-    alpha2 = atan2(cosU1 * sin(lamb),
-                -sinU1 * cosU2 + cosU1 * sinU2 * cos(lamb))
-
-    return (degrees(alpha1) + 360) % 360, (degrees(alpha2) + 360) % 360, distance
-
-def get_magnetic_variation(lat, lon, date=None):
-    """Get magnetic variation for a given position and date."""
-    if not has_pygeomag:
-        return 0.0  # Return zero if pygeomag is not available
-        
-    date = date or datetime.datetime.utcnow()
-    dec_year = decimal_year(date)
-    result = geo.calculate(glat=lat, glon=lon, alt=0, time=dec_year)
-    return result.d
-
-def calculate_course_and_distance(departure, arrival, current_pos=None, date=None):
-    """Calculate true and magnetic course, distance, and magnetic variation."""
-    t1, _, d_m = vincenty_inverse(departure['lat'], departure['lon'],
-                                arrival['lat'], arrival['lon'])
-    if current_pos:
-        t1, _, _ = vincenty_inverse(current_pos['lat'], current_pos['lon'],
-                                    arrival['lat'], arrival['lon'])
-        var = get_magnetic_variation(current_pos['lat'], current_pos['lon'], date)
-        is_dyn = True
-    else:
-        var = get_magnetic_variation(departure['lat'], departure['lon'], date)
-        is_dyn = False
-
-    mag_course = (t1 - var + 360) % 360
-    return {
-        'true_course': round(t1, 1),
-        'magnetic_course': round(mag_course, 1),
-        'distance_nm': round(d_m / 1852, 1),
-        'variation': round(var, 1),
-        'dynamic': is_dyn
-    }
-
-def geographic_midpoint(lat1, lon1, lat2, lon2):
-    """Calculate the geographic midpoint between two points."""
-    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
-    bx = cos(lat2) * cos(lon2 - lon1)
-    by = cos(lat2) * sin(lon2 - lon1)
-    lat3 = atan2(
-        sin(lat1) + sin(lat2),
-        sqrt((cos(lat1) + bx) ** 2 + by ** 2)
-    )
-    lon3 = lon1 + atan2(by, cos(lat1) + bx)
-    return degrees(lat3), degrees(lon3)
-
-def calculate_wind_effects(true_course, tas, wind_dir, wind_speed):
+import random
+def find_airport_by_name(name, reference, airports):
     """
-    Calculate wind correction angle, true heading, and groundspeed.
-    Wind direction should be given in degrees true (from which wind blows).
+    Find airport in airports list by matching either name or reference (case insensitive partial match).
     
     Parameters:
-    - true_course: true course in degrees
-    - tas: true airspeed in knots
-    - wind_dir: wind direction in degrees true (from)
-    - wind_speed: wind speed in knots
-    
+        name (str): Partial or full airport name to search.
+        reference (str): Additional reference string to match.
+        airports (list): List of airport objects (assumed to have a 'name' attribute).
+
     Returns:
-    Dictionary with wind correction angle, true heading, and groundspeed
+        Airport object if a match is found, else None.
     """
-    tc_rad = radians(true_course)
-    wd_rad = radians(wind_dir)
+    name_lower = name.lower()
+    reference_lower = reference.lower()
 
-    wca_rad = asin((wind_speed / tas) * sin(wd_rad - tc_rad))
-    wca_deg = degrees(wca_rad)
+    for airport in airports:
+        airport_name_lower = airport.name.lower()
+        if name_lower in airport_name_lower and reference_lower in airport_name_lower:
+            return airport  # Return the first matched Airport object
+    return None
 
-    gs = tas * cos(wca_rad) + wind_speed * cos(wd_rad - tc_rad)
-    true_heading = (true_course + wca_deg + 360) % 360
+def find_airport_by_name(name, reference, airports):
+    """
+    Find airport in airports list by matching either name or reference with improved accuracy.
+         
+    Parameters:
+        name (str): Partial or full airport name to search.
+        reference (str|list): Additional reference string(s) to match (L1, L2, etc.).
+        airports (list): List of Airport objects with code, name, lat, long, reference attributes.
+     
+    Returns:
+        Airport object if a match is found, else None.
+    """
+    if not name or not airports:
+        return None
+    
+    # Normalize name for comparison
+    name_lower = name.lower().strip()
+    
+    # Handle reference parameter (keep uppercase for L1, L2 matching)
+    reference_list = []
+    if isinstance(reference, list):
+        reference_list = [ref.upper().strip() for ref in reference if isinstance(ref, str) and ref.strip()]
+    elif isinstance(reference, str) and reference.strip():
+        reference_list = [reference.upper().strip()]
+    
+    # Priority 1: Exact name match (after cleaning)
+    for airport in airports:
+        airport_name_clean = airport.name.lower().strip()
+        if name_lower == airport_name_clean:
+            return airport
+    
+    # Priority 2: Exact airport code match (ICAO codes like YHMT, YMML)
+    name_upper = name.upper().strip()
+    for airport in airports:
+        if name_upper == airport.code:
+            return airport
+    
+    # Priority 3: Exact reference match (L1, L2, etc.)
+    if reference_list:
+        for airport in airports:
+            if airport.reference in reference_list:
+                return airport
+    
+    # Priority 4: Name starts with search term
+    for airport in airports:
+        airport_name_clean = airport.name.lower().strip()
+        if airport_name_clean.startswith(name_lower):
+            return airport
+    
+    # Priority 5: Airport code starts with search term
+    for airport in airports:
+        airport_code_lower = airport.code.lower()
+        if airport_code_lower.startswith(name_lower):
+            return airport
+    
+    # Priority 6: Name contains all words from search term
+    name_words = name_lower.split()
+    if len(name_words) > 1:
+        for airport in airports:
+            airport_name_clean = airport.name.lower().strip()
+            if all(word in airport_name_clean for word in name_words):
+                return airport
+    
+    # Priority 7: Partial name match (case insensitive)
+    for airport in airports:
+        airport_name_clean = airport.name.lower().strip()
+        if name_lower in airport_name_clean:
+            return airport
+    
+    # Priority 8: Partial code match (case insensitive)
+    for airport in airports:
+        airport_code_lower = airport.code.lower()
+        if name_lower in airport_code_lower or airport_code_lower in name_lower:
+            return airport
+    
+    # Priority 9: Reference partial match in name
+    if reference_list:
+        for airport in airports:
+            airport_name_clean = airport.name.lower().strip()
+            for ref in reference_list:
+                if ref.lower() in airport_name_clean:
+                    return airport
+    
+    # Priority 10: Cross-reference matching
+    # Check if search name matches reference and vice versa
+    if reference_list:
+        for airport in airports:
+            # Check if any reference matches airport name
+            for ref in reference_list:
+                if ref.lower() in airport.name.lower().strip():
+                    return airport
+            
+            # Check if search name matches airport reference
+            name_upper = name.upper().strip()
+            if name_upper == airport.reference:
+                return airport
+    
+    # No match found
+    return None
 
-    return {
-        'wind_correction_angle': round(wca_deg, 1),
-        'true_heading': round(true_heading, 1),
-        'groundspeed': round(gs, 1)
+def get_track_angle(self, dep, arr, magnetic=True):
+    # Calculate true bearing using great-circle formula
+        lat1 = math.radians(dep.lat)
+        lon1 = math.radians(dep.long)
+        lat2 = math.radians(arr.lat)
+        lon2 = math.radians(arr.long)
+        
+        dlon = lon2 - lon1
+        y = math.sin(dlon) * math.cos(lat2)
+        x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+        
+        true_bearing = math.degrees(math.atan2(y, x))
+        true_bearing = (true_bearing + 360) % 360
+        
+        if not magnetic:
+            return true_bearing
+        
+        # Convert true bearing to magnetic bearing using your existing function
+        magnetic_variation = self.get_magnetic_variation(dep.lat, dep.long)
+        magnetic_bearing = (true_bearing + magnetic_variation) % 360
+        
+        return magnetic_bearing
+
+def get_magnetic_variation( lat, lon, date=None):
+        date = date or datetime.datetime.utcnow()
+        dec_year = decimal_year(date)
+        result = geo.calculate(glat=lat, glon=lon, alt=0, time=dec_year)
+        return result.d
+PREDEFINED_2_MARK_QUESTIONS = [
+    {
+        "text_template": "Q1.Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}. TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
+        "dep_name_text": "Launceston",
+        "arr_name_text": "East sale",
+        "track_name": "W-218",
+        "etp_dest1_name_text": "East sale",
+        "etp_dest2_name_text": "Latrobe Valley",
+        "reference": "L1",
+    },
+    {
+        "text_template": "Q2.Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}. TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
+        "reference": "L2",
+        "dep_name_text": "Griffith",
+        "arr_name_text": "Mildura",
+        "track_name": "W-415",
+        "etp_dest1_name_text": "Mildura",
+        "etp_dest2_name_text": "Swan Hill",
+    },
+    {
+        "text_template": "Q3.Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}. TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
+        "dep_name_text": "Grafton",
+        "arr_name_text": "Inverell",
+        "track_name": "W-623",
+        "etp_dest1_name_text": "Inverell",
+        "etp_dest2_name_text": "Armidale",
+        "reference": "L2",
+    },
+    {
+        "text_template": "Q4.Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}.  TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
+        "dep_name_text": "Emerald",
+        "arr_name_text": "Charleville",
+        "track_name": "W-806",
+        "etp_dest1_name_text": "Charleville",
+        "etp_dest2_name_text": "Roma",
+        "reference": "L4",
     }
-
-# ---- End of added functions ----
-
+]
 # Initialize generator
 generator = AirportQuestionGenerator(sample_airports)
-
+def find(name,airports):
+    """Find airport in airports_list by name (case insensitive partial match)"""
+    name_lower = name.lower()
+    for airport in airports:
+        if name_lower in airport.name.lower():
+            return airport  # Return the Airport object directly
+    return None
 # Modify calculate_geodesic function to include ground speed calculations
 
 @app.route('/generate_question', methods=['POST'])
@@ -194,102 +419,319 @@ def generate_question_endpoint():
         if marks not in [2, 3]:
             return jsonify({'error': 'Marks must be 2 or 3'}), 400
 
-        # Generate the base question
-        question = generator.generate_question_with_reference(reference, num_airports)
-        
-        # Extract details for geodesic calculation
-        dep = question.details.departure
-        arr = question.details.arrival
-        land1 = question.details.land1
-        land2 = question.details.land2
-        tas_normal = question.details.tas_single_engine
-        wind_speed = question.details.wind_single_engine['speed']
-        wind_dir = question.details.wind_single_engine['direction'] % 360
-       
-        
-        P1 = (dep.lat, dep.long)
-        P2 = (arr.lat, arr.long)
-        P3 = (land1.lat, land1.long)
-        P4 = (land2.lat, land2.long)
-        geodesic_results = calculate_geodesic(P1, P2, P3, P4, tas_normal, wind_speed, wind_dir)
-        distance_p3 = geodesic_results['distance_to_P3_nm_1']
-        distance_p4 = geodesic_results['distance_to_P4_nm']
-        critical_point_data = geodesic_results.get('critical_point')
-        if isinstance(critical_point_data, (list, tuple)) and len(critical_point_data) == 2:
-            critical_point_obj = Point(critical_point_data[0], critical_point_data[1])
-        elif hasattr(critical_point_data, 'lat') and hasattr(critical_point_data, 'long'):
-            critical_point_obj = critical_point_data
-        else:
-            logging.error(f"Invalid critical_point type: {type(critical_point_data)}")
-            return jsonify({'error': 'Invalid critical point data'}), 500
-
-        cousefromhome=vincenty_inverse(land1.lat, land1.long, critical_point_obj.lat, critical_point_obj.long)[1]
-        
-        cousefromland1=vincenty_inverse(critical_point_obj.lat,critical_point_obj.long, land2.lat, land2.long)[0]
-        gs=calculate_wind_effects(cousefromhome, tas_normal, wind_dir, wind_speed)['groundspeed']
-        cs=calculate_wind_effects(cousefromland1, tas_normal, wind_dir, wind_speed)['groundspeed']
-        time_p3=distance_p3/gs
-        time_p4=distance_p4/cs        # Calculate geodesic results, which include the ground speed calculations
-        time=(time_p3-time_p4)*3600
-        if not geodesic_results:
-            logging.error("Geodesic calculation failed after retries")
-            return jsonify({'error': 'Failed to generate valid geodesic configuration. Please try again.'}), 500
-        
-        # Base question text from the generator
-        base_question = question.question
-        
-        # Modify question text based on marks
+        # For 2-mark questions, use predefined questions
         if marks == 2:
-            # For 2-mark questions, include the P3-P4 distance
-            distance_p3_p4 = geodesic_results['distance_p3_p4']
-            additional_text = f" Given that the distance between {land1.name} and {land2.name} is {distance_p3_p4:.1f} nm,"
-            # Insert the additional text before "is -"
-            parts = base_question.split("is -")
-            if len(parts) == 2:
-                full_question = parts[0] + additional_text + " is -"
-            else:
-                full_question = base_question  # Fallback if "is -" is not found
-        else:
-            # For 3-mark questions, use the base question without the distance
-            full_question = base_question
+            # Select a random predefined question
+            predefined_question = random.choice(PREDEFINED_2_MARK_QUESTIONS)
+            
+            # Find airports in sample_airports
+            dep = find(predefined_question['dep_name_text'], sample_airports)
+            arr = find(predefined_question['arr_name_text'], sample_airports)
+            land1 = find(predefined_question['etp_dest1_name_text'], sample_airports)
+            land2 = find(predefined_question['etp_dest2_name_text'], sample_airports)
+            
+            if not all([dep, arr, land1, land2]):
+                return jsonify({'error': 'Could not find all airports in sample data'}), 400
+            def generate_three_digit_multiple_of_10():
+    # Three-digit numbers range from 100 to 999
+    # We need multiples of 10 that are less than 360
+    # So we need numbers from 100 to 350
+    # We can generate a random number between 10 and 35 and multiply by 10
+                base_number = random.randint(10, 35)
+                return base_number * 10
 
-        # Prepare the response
-        return jsonify({
-            'question': full_question,
-            'details': {
-                'departure': dep.code,
-                'departure_name': dep.name,
-                'arrival': arr.code,
-                'arrival_name': arr.name,
-                'land1': land1.code,
-                'land1_name': land1.name,
-                'land2': land2.code,
-                'land2_name': land2.name,
-                'cruise_level': question.details.cruise_level,
-                'tas_normal': question.details.tas_normal,
-                'tas_single_engine': question.details.tas_single_engine,
-                'wind_normal': question.details.wind_normal,
-                'wind_single_engine': question.details.wind_single_engine,
-                'shape_type': question.details.shape_type,
-                'reference': question.details.reference,
-                'geodesic': geodesic_results,
-                'gs':gs,
-                'cs':cs,
-                'time1' : time_p3,
-                'distance_p4':distance_p4,
-                'time2' : time_p4,
-                'time':int(time),
-                'course_from_home': cousefromhome,
-                'course_from_land1': cousefromland1
-            }
-        })
+            # Generate random wind and TAS values
+            wind_dir = generate_three_digit_multiple_of_10()
+            def generate_wind_strength():
+    # Find how many multiples of 5 are less than 90
+    # 5, 10, 15, ..., 85 (17 values)
+                num_multiples = 90 // 5
+                # Generate a random index between 0 and num_multiples-1
+                random_index = random.randint(0, num_multiples - 1)
+                # Return the corresponding multiple of 5
+                return (random_index + 1) * 5
+            wind_speed =generate_wind_strength()
+            def random_multiple_of_5(min_value, max_value):
+    # Find the first multiple of 5 >= min_value
+                lower_bound = min_value if min_value % 5 == 0 else min_value + (5 - min_value % 5)
+    
+    # Find the last multiple of 5 <= max_value
+                upper_bound = max_value if max_value % 5 == 0 else max_value - (max_value % 5)
+    
+    # Calculate how many multiples of 5 are in the range
+                num_multiples = (upper_bound - lower_bound) // 5 + 1
+    
+    # Generate a random index and calculate the corresponding multiple of 5
+                random_index = random.randint(0, num_multiples - 1)
+                result = lower_bound + random_index * 5
+    
+                return result
+            tas = random_multiple_of_5(100, 300)
+            # Format wind direction for display (e.g., "270M")
+            wind_dir_display = f"{wind_dir:03d}M"
+            
+            # Format the question text
+            question_text = predefined_question['text_template'].format(
+                dep_name_text=predefined_question['dep_name_text'],
+                arr_name_text=predefined_question['arr_name_text'],
+                track_name=predefined_question['track_name'],
+                etp_dest1_name_text=predefined_question['etp_dest1_name_text'],
+                etp_dest2_name_text=predefined_question['etp_dest2_name_text'],
+                wind_dir_display=wind_dir_display,
+                wind_speed=wind_speed,
+                tas=tas,
+                reference=predefined_question['reference'],
+            )
+            dep1 = find_airport_by_name(dep.name, reference,airports)
+            arr1 = find_airport_by_name(arr.name,reference ,airports)
+            land1_map = find_airport_by_name(land1.name,reference ,airports)
+            land2_map = find_airport_by_name(land2.name,reference ,airports)
+            # Calculate geodesic data
+            P1 = (dep.lat, dep.long)
+            P2 = (arr.lat, arr.long)
+            P3 = (land1.lat, land1.long)
+            P4 = (land2.lat, land2.long)
+            P5 = (dep1.lat, dep1.long)
+            P6 = (arr1.lat, arr1.long)
+            P7 = (land1_map.lat, land1_map.long)
+            P8 = (land2_map.lat, land2_map.long)
+            reference=predefined_question['reference']
+           
+            geodesic_results = calculate_geodesic1(P1, P2, P3, P4, tas, wind_speed, wind_dir)
+            geodesic_results_1 = calculate_geodesic(P5, P6, P7, P8, tas, wind_speed,wind_speed, chart_id=reference) 
+            distance_p3 = geodesic_results['distance_to_P3_nm_1']
+            distance_p4 = geodesic_results['distance_to_P4_nm']
+            critical_point_data = geodesic_results.get('critical_point')
+            
+            if isinstance(critical_point_data, (list, tuple)) and len(critical_point_data) == 2:
+                critical_point_obj = Point(critical_point_data[0], critical_point_data[1])
+            elif isinstance(critical_point_data, dict) and 'lat' in critical_point_data and 'long' in critical_point_data:
+                critical_point_obj = Point(critical_point_data['lat'], critical_point_data['long'])
+            else:
+                raise ValueError(f"Invalid critical_point_data format: {critical_point_data}")   
+            land1_obj = Point(land1.lat, land1.long)
+            land2_obj = Point(land2.lat, land2.long)        
+
+            nav=Navigation()  
+            mid_house = nav.get_midpoint(critical_point_obj, land1_obj)
+            mid_land1 = nav.get_midpoint(critical_point_obj, land2_obj) 
+            course_from_home = nav.get_track_angle(mid_house, land2_obj)
+            course_from_land1 = nav.get_track_angle(mid_land1, land2_obj)
+            def calculate_ground_speed(true_course, tas, wind_dir, wind_speed):
+                    """
+                    Calculate ground speed given true course, true airspeed, wind direction, and wind speed.
+                    
+                    Args:
+                        true_course (float): Intended flight path in degrees (clockwise from north).
+                        tas (float): True airspeed in knots.
+                        wind_dir (float): Direction wind is coming from in degrees (clockwise from north).
+                        wind_speed (float): Wind speed in knots.
+                    
+                    Returns:
+                        float: Ground speed in knots.
+                    """
+                    tc_rad = math.radians(true_course)
+                    wd_rad = math.radians(wind_dir)
+                    wca_rad = math.asin((wind_speed / tas) * math.sin(wd_rad - tc_rad))
+                    gs = tas * math.cos(wca_rad) - wind_speed * math.cos(wd_rad - tc_rad)
+                    return gs
+            gs=calculate_ground_speed(course_from_home, tas, wind_dir, wind_speed)
+            cs=calculate_ground_speed(course_from_land1, tas, wind_dir, wind_speed)
+            time_p3=distance_p3/gs
+            time_p4=distance_p4/cs        # Calculate geodesic results, which include the ground speed calculations
+            time=(time_p3-time_p4)*3600
+
+
+            
+            if not geodesic_results:
+                logging.error("Geodesic calculation failed after retries")
+                return jsonify({'error': 'Failed to generate valid geodesic configuration. Please try again.'}), 500
+                
+            # Add distance between P3 and P4 for 2-mark questions
+            distance_p3_p4 = geodesic_results['distance_p3_p4']
+            question_text = question_text.replace("is -", f" Given that the distance between {land1.name} and {land2.name} is {distance_p3_p4:.1f} nm, is -")
+            
+            return jsonify({
+                'question': question_text,
+                'details': {
+                    'departure': dep.code,
+                    'departure_name': dep.name,
+                    'arrival': arr.code,
+                    'arrival_name': arr.name,
+                    'land1': land1.code,
+                    'land1_name': land1.name,
+                    'land2': land2.code,
+                    'land2_name': land2.name,
+                    'cruise_level': "FL180",  # Default for 2-mark questions
+                    'tas_normal': tas,
+                    'tas_single_engine': tas,
+                    'wind_normal': {'direction': wind_dir, 'speed': wind_speed},
+                    'wind_single_engine': {'direction': wind_dir, 'speed': wind_speed},
+                    'shape_type': "ETP",  # Default for 2-mark questions
+                    'reference': reference,
+                    'geodesic': geodesic_results,
+                    'geodesic_1': geodesic_results_1,
+                    'gs':gs,
+                    'cs':cs,
+                    'time1' : time_p3,
+                    'time2' : time_p4,
+                    'time':int(time),
+                }
+            })
+            
+        else:  # 3-mark questions - keep existing logic
+            # Generate the base question
+            question = generator.generate_question_with_reference(reference, num_airports)
+            
+            # Extract details for geodesic calculation
+            dep = question.details.departure
+            arr = question.details.arrival
+            land1 = question.details.land1
+            land2 = question.details.land2
+            tas_normal = question.details.tas_single_engine
+            wind_speed = question.details.wind_single_engine['speed']
+            wind_dir = question.details.wind_single_engine['direction'] % 360
+            reference = question.details.reference
+            dep1 = find_airport_by_name(dep.name, reference,airports)
+            arr1 = find_airport_by_name(arr.name,reference ,airports)
+            land1_map = find_airport_by_name(land1.name,reference ,airports)
+            land2_map = find_airport_by_name(land2.name,reference ,airports)
+
+            P1 = (dep.lat, dep.long)
+            P2 = (arr.lat, arr.long)
+            P3 = (land1.lat, land1.long)
+            P4 = (land2.lat, land2.long)
+            P5 = (dep1.lat, dep1.long)
+            P6 = (arr1.lat, arr1.long)
+            P7 = (land1_map.lat, land1_map.long)
+            P8 = (land2_map.lat, land2_map.long)
+            reference = question.details.reference
+            geodesic_results = calculate_geodesic1(P1, P2, P3, P4, tas_normal, wind_speed, wind_dir,chart_id=reference)
+            geodesic_results_1 = calculate_geodesic(P5, P6, P7, P8, tas_normal, wind_speed, wind_dir,chart_id=reference)
+            distance_p3 = geodesic_results['distance_to_P3_nm_1']
+            distance_p4 = geodesic_results['distance_to_P4_nm']
+            critical_point_data = geodesic_results.get('critical_point')
+            
+            if isinstance(critical_point_data, (list, tuple)) and len(critical_point_data) == 2:
+                    critical_point_obj = Point(critical_point_data[0], critical_point_data[1])
+            elif hasattr(critical_point_data, 'lat') and hasattr(critical_point_data, 'long'):
+                    critical_point_obj = critical_point_data
+            else:
+                logging.error(f"Invalid critical_point type: {type(critical_point_data)}")
+                return jsonify({'error': f'Invalid critical_point type: {type(critical_point_data)}'}), 500
+        
+          
+
+
+        # Calculate track angles 
+            nav=Navigation()  
+            mid_house = nav.get_midpoint(critical_point_obj, land1)
+            mid_land1 = nav.get_midpoint(critical_point_obj, land2) 
+            course_from_home = nav.get_track_angle(mid_house, land1)
+            course_from_land1 = nav.get_track_angle(mid_land1, land2)
+            def calculate_ground_speed(true_course, tas, wind_dir, wind_speed):
+                    """
+                    Calculate ground speed given true course, true airspeed, wind direction, and wind speed.
+                    
+                    Args:
+                        true_course (float): Intended flight path in degrees (clockwise from north).
+                        tas (float): True airspeed in knots.
+                        wind_dir (float): Direction wind is coming from in degrees (clockwise from north).
+                        wind_speed (float): Wind speed in knots.
+                    
+                    Returns:
+                        float: Ground speed in knots.
+                    """
+                    tc_rad = math.radians(true_course)
+                    wd_rad = math.radians(wind_dir)
+                    wca_rad = math.asin((wind_speed / tas) * math.sin(wd_rad - tc_rad))
+                    gs = tas * math.cos(wca_rad) - wind_speed * math.cos(wd_rad - tc_rad)
+                    return gs
+            gs=calculate_ground_speed(course_from_home, tas_normal, wind_dir, wind_speed)
+            cs=calculate_ground_speed(course_from_land1, tas_normal, wind_dir, wind_speed)
+            time_p3=distance_p3/gs
+            time_p4=distance_p4/cs        # Calculate geodesic results, which include the ground speed calculations
+            time=(time_p3-time_p4)*3600
+        
+           
+
+            # Base question text from the generator
+            full_question = question.question  # For 3-mark questions, use as-is
+            try:
+                doc_data={
+                    'question': full_question,
+                    'details': {
+                        'maganitute': course_from_home,
+                        'maganitute1': course_from_land1,
+                        'departure': dep.code,
+                        'departure_name': dep.name,
+                        'arrival': arr.code,
+                        'arrival_name': arr.name,
+                        'land1': land1.code,
+                        'land1_name': land1.name,
+                        'land2': land2.code,
+                        'land2_name': land2.name,
+                        'cruise_level': question.details.cruise_level,
+                        'tas_normal': question.details.tas_normal,
+                        'tas_single_engine': question.details.tas_single_engine,
+                        'wind_normal': question.details.wind_normal,
+                        'wind_single_engine': question.details.wind_single_engine,
+                        'shape_type': question.details.shape_type,
+                        'reference': question.details.reference,
+                        
+                        'gs':gs,
+                        'cs':cs,
+                        'time1' : time_p3,
+                        'time2' : time_p4,
+                        'time':int(time),
+                }
+                }
+                
+                doc_ref = db.collection("questions").add(doc_data)
+                print(f"✅ Success! Document ID: {doc_ref[1].id}")
+            except Exception as e:
+                    print(f"❌ Failed to write to Firestore: {str(e)}")
+
+            # Prepare the response
+            return jsonify({
+                'question': full_question,
+                
+                'details': {
+                    'maganitute': course_from_home,
+                    'maganitute_1': course_from_land1,
+                    'departure': dep.code,
+                    'departure_name': dep.name,
+                    'arrival': arr.code,
+                    'arrival_name': arr.name,
+                    'land1': land1.code,
+                    'land1_name': land1.name,
+                    'land2': land2.code,
+                    'land2_name': land2.name,
+                    'cruise_level': question.details.cruise_level,
+                    'tas_normal': question.details.tas_normal,
+                    'tas_single_engine': question.details.tas_single_engine,
+                    'wind_normal': question.details.wind_normal,
+                    'wind_single_engine': question.details.wind_single_engine,
+                    'shape_type': question.details.shape_type,
+                    'reference': question.details.reference,
+                    'geodesic': geodesic_results,
+                    'geodesic_1': geodesic_results_1,
+                    'gs':gs,
+                    'cs':cs,
+                    'time1' : time_p3,
+                    'time2' : time_p4,
+                    'time':int(time),
+                }
+            })
+            
     except ValueError as ve:
         logging.error(f"ValueError: {str(ve)}")
         return jsonify({'error': str(ve)}), 400
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         logging.error(f"Unexpected error: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred. Please try again.'}), 500
-
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
@@ -302,31 +744,10 @@ def home():
 
 @app.route('/question')
 def display_question():
-    return render_template('question.html')
+    return render_template('question1.html')
 
 # Add a new endpoint to calculate wind effects and ground speed
-@app.route('/calculate_wind_effects', methods=['POST'])
-def wind_effects_endpoint():
-    try:
-        data = request.get_json()
-        if not data or 'true_course' not in data or 'tas' not in data or 'wind_dir' not in data or 'wind_speed' not in data:
-            return jsonify({'error': 'Missing required parameters: true_course, tas, wind_dir, and wind_speed are required'}), 400
-        
-        true_course = float(data['true_course'])
-        tas = float(data['tas'])
-        wind_dir = float(data['wind_dir'])
-        wind_speed = float(data['wind_speed'])
-        
-        # Calculate wind effects including ground speed
-        results = calculate_wind_effects(true_course, tas, wind_dir, wind_speed)
-        
-        return jsonify(results)
-    except ValueError as ve:
-        logging.error(f"ValueError: {str(ve)}")
-        return jsonify({'error': str(ve)}), 400
-    except Exception as e:
-        logging.error(f"Unexpected error: {str(e)}")
-        return jsonify({'error': 'An unexpected error occurred. Please try again.'}), 500
+
 
 # Error handlers
 @app.errorhandler(400)

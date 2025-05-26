@@ -3,12 +3,141 @@ import math
 from typing import Dict, List, NamedTuple
 import logging
 from sample_airport import *
-from cal_func import calculate_geodesic
+from cal_func import calculate_geodesic1
 from geographiclib.geodesic import Geodesic
+import datetime
+from pygeomag import GeoMag
+geo = GeoMag()
+class Airport:
+    def __init__(self, code, name, lat, long, reference):
+        self.code = code
+        self.name = name
+        self.lat = lat
+        self.long = long
+        self.reference = reference
+    def __repr__(self):
+        return f"{self.code} - {self.name}"
+        
+def decimal_year(date: datetime.datetime) -> float:
+    """Convert a datetime to decimal year."""
+    year_start = datetime.datetime(date.year, 1, 1)
+    year_end = datetime.datetime(date.year + 1, 1, 1)
+    year_length = (year_end - year_start).total_seconds()
+    elapsed = (date - year_start).total_seconds()
+    return date.year + elapsed / year_length
+
 class Point:
     def __init__(self, lat, long):
         self.lat = lat
         self.long = long
+class Navigation:
+    def get_track_angle(self, dep, arr, magnetic=True, date=None):
+        # Validate inputs
+        if not (-90 <= dep.lat <= 90 and -180 <= dep.long <= 180 and 
+                -90 <= arr.lat <= 90 and -180 <= arr.long <= 180):
+            raise ValueError("Invalid latitude or longitude")
+        if (dep.lat, dep.long) == (arr.lat, arr.long):
+            return 0.0
+
+        # Calculate true bearing using great-circle formula
+        lat1 = math.radians(dep.lat)
+        lon1 = math.radians(dep.long)
+        lat2 = math.radians(arr.lat)
+        lon2 = math.radians(arr.long)
+        
+        dlon = lon2 - lon1
+        y = math.sin(dlon) * math.cos(lat2)
+        x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+        
+        true_bearing = math.degrees(math.atan2(y, x))
+        true_bearing = (true_bearing + 360) % 360
+        
+        if not magnetic:
+            return round(true_bearing, 2)
+        
+        # Convert to magnetic bearing
+        magnetic_variation = self.get_magnetic_variation(dep.lat, dep.long, date)
+        magnetic_bearing = (true_bearing - magnetic_variation + 360) % 360
+        
+        return round(magnetic_bearing, 2)
+
+    def get_magnetic_variation(self, lat, lon, date=None):
+        if geo is None:
+            print("GeoMag unavailable. Using fallback magnetic variation (-12.0 for New York).")
+            return -12.0  # Fallback for New York, 2023
+        try:
+            date = date or datetime.datetime.utcnow()
+            dec_year = self.decimal_year(date)
+            result = geo.calculate(glat=lat, glon=lon, alt=0, time=dec_year)
+            return float(result.dec)
+        except Exception as e:
+            print(f"Error calculating magnetic variation: {e}")
+            return -12.0  # Fallback for New York
+
+    def decimal_year(self, date):
+        """Convert a datetime object to decimal year."""
+        year_start = datetime.datetime(date.year, 1, 1)
+        year_end = datetime.datetime(date.year + 1, 1, 1)
+        year_length = (year_end - year_start).total_seconds()
+        seconds_into_year = (date - year_start).total_seconds()
+        return date.year + seconds_into_year / year_length
+
+    def get_midpoint(self, dep, arr):
+        """Calculate the geographic midpoint between two points."""
+        # Convert to radians
+        lat1 = math.radians(dep.lat)
+        lon1 = math.radians(dep.long)
+        lat2 = math.radians(arr.lat)
+        lon2 = math.radians(arr.long)
+        
+        # Convert to Cartesian coordinates
+        x1 = math.cos(lat1) * math.cos(lon1)
+        y1 = math.cos(lat1) * math.sin(lon1)
+        z1 = math.sin(lat1)
+        x2 = math.cos(lat2) * math.cos(lon2)
+        y2 = math.cos(lat2) * math.sin(lon2)
+        z2 = math.sin(lat2)
+        
+        # Average coordinates
+        x = (x1 + x2) / 2
+        y = (y1 + y2) / 2
+        z = (z1 + z2) / 2
+        
+        # Convert back to lat/long
+        lon = math.atan2(y, x)
+        hyp = math.sqrt(x * x + y * y)
+        lat = math.atan2(z, hyp)
+        
+        # Convert to degrees
+        mid_lat = math.degrees(lat)
+        mid_lon = math.degrees(lon)
+        
+        return Point(round(mid_lat, 4), round(mid_lon, 4))
+
+    def get_route_magnitude(self, dep, arr, unit='km'):
+        """Calculate great-circle distance between two points."""
+        # Earth's radius (km)
+        R = 6371.0  # Use 3440.1 for nautical miles, 3958.8 for statute miles
+        
+        lat1 = math.radians(dep.lat)
+        lon1 = math.radians(dep.long)
+        lat2 = math.radians(arr.lat)
+        lon2 = math.radians(arr.long)
+        
+        # Haversine formula
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        distance = R * c
+        
+        if unit == 'nm':
+            distance *= 0.539957  # Convert km to nautical miles
+        elif unit == 'mi':
+            distance *= 0.621371  # Convert km to statute miles
+            
+        return round(distance, 2)
+
 class QuestionDetails(NamedTuple):
     departure: Airport
     arrival: Airport
@@ -70,7 +199,8 @@ class AirportQuestionGenerator:
         
         return angle
     
-    def get_track_angle(self, dep, arr):
+    def get_track_angle(self, dep, arr, magnetic=True):
+    # Calculate true bearing using great-circle formula
         lat1 = math.radians(dep.lat)
         lon1 = math.radians(dep.long)
         lat2 = math.radians(arr.lat)
@@ -80,11 +210,28 @@ class AirportQuestionGenerator:
         y = math.sin(dlon) * math.cos(lat2)
         x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
         
-        bearing = math.degrees(math.atan2(y, x))
-        bearing = (bearing + 360) % 360
+        true_bearing = math.degrees(math.atan2(y, x))
+        true_bearing = (true_bearing + 360) % 360
         
-        return bearing
-    
+        if not magnetic:
+            return true_bearing
+        
+        # Convert true bearing to magnetic bearing using your existing function
+        magnetic_variation = self.get_magnetic_variation(dep.lat, dep.long)
+        magnetic_bearing = (true_bearing + magnetic_variation) % 360
+        
+        return magnetic_bearing
+
+    def get_magnetic_variation(self, lat, lon, date=None):
+        try:
+            date = date or datetime.datetime.utcnow()
+            dec_year = decimal_year(date)
+            result = geo.calculate(glat=lat, glon=lon, alt=0, time=dec_year)
+            return float(result.dec)  # Ensure numeric return
+        except Exception as e:
+            print(f"Error calculating magnetic variation: {e}")
+            return 0.0  # Default value on failure
+            
     def determine_triangle_type(self, a, b, c):
         sides = sorted([a, b, c])
         
@@ -348,7 +495,7 @@ class AirportQuestionGenerator:
                     wind_speed_single = int(rounded_speed)
                     
                     question_text = (
-                        f"Refer ERC {selected['reference']}. You are planning a flight from {dep.name} to {arr.name} "
+                        f"Refer ERC {selected['reference']}. You are planning a flight from {dep.name}{dep.code} to {arr.name}{dep.code} "
                         f"direct  at FL{cruise_level} with a TAS of {tas_normal} kt for normal operations "
                         f"and single engine TAS of {tas_single_engine} kt. WV {wind_dir_normal}M / {wind_speed_normal} kt "
                         f"at FL{cruise_level} (normal ops crz), WV {wind_dir_single}M / {wind_speed_single} kt for single "
@@ -382,7 +529,7 @@ class AirportQuestionGenerator:
                         continue
                     
                     # Compute geodesic results
-                    geodesic_results = calculate_geodesic(P1, P2, P3, P4, tas_single, wind_speed_single, wind_dir_single)
+                    geodesic_results = calculate_geodesic1(P1, P2, P3, P4, tas_single, wind_speed_single, wind_dir_single)
                     
                     if geodesic_results is None:
                         logging.warning(f"Geodesic calculation failed for: {dep.code}-{arr.code}-{eland.code}-{eland2.code}")
@@ -399,19 +546,36 @@ class AirportQuestionGenerator:
                     else:
                         logging.error(f"Invalid critical_point type: {type(critical_point_data)}")
                         continue
-                    course_from_home = self.get_track_angle(eland, critical_point_obj)
-                    course_from_land1 = self.get_track_angle(critical_point_obj, eland2)
+                    nav = Navigation()
+
+
+                    mid_house = nav.get_midpoint(critical_point_obj, eland)
+                    mid_land1 = nav.get_midpoint(critical_point_obj, eland2) 
+                    course_from_home = nav.get_track_angle(mid_house,eland)
+                    course_from_land1 = nav.get_track_angle(mid_land1, eland2)
                     
                     # Calculate groundspeeds using wind effects (from Flask code's calculate_wind_effects)
-                    def calculate_wind_effects(true_course, tas, wind_dir, wind_speed):
+                    def calculate_ground_speed(true_course, tas, wind_dir, wind_speed):
+                        """
+                        Calculate ground speed given true course, true airspeed, wind direction, and wind speed.
+                        
+                        Args:
+                            true_course (float): Intended flight path in degrees (clockwise from north).
+                            tas (float): True airspeed in knots.
+                            wind_dir (float): Direction wind is coming from in degrees (clockwise from north).
+                            wind_speed (float): Wind speed in knots.
+                        
+                        Returns:
+                            float: Ground speed in knots.
+                        """
                         tc_rad = math.radians(true_course)
                         wd_rad = math.radians(wind_dir)
                         wca_rad = math.asin((wind_speed / tas) * math.sin(wd_rad - tc_rad))
-                        gs = tas * math.cos(wca_rad) + wind_speed * math.cos(wd_rad - tc_rad)
+                        gs = tas * math.cos(wca_rad) - wind_speed * math.cos(wd_rad - tc_rad)
                         return gs
-                    
-                    gs = calculate_wind_effects(course_from_home, tas_single, wind_dir_single, wind_speed_single)
-                    cs = calculate_wind_effects(course_from_land1, tas_single, wind_dir_single, wind_speed_single)
+                        
+                    gs = calculate_ground_speed(course_from_home, tas_single, wind_dir_single, wind_speed_single)
+                    cs = calculate_ground_speed(course_from_land1, tas_single, wind_dir_single, wind_speed_single)
                     
                     time_p3 = distance_p3 / gs
                     time_p4 = distance_p4 / cs
