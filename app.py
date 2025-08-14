@@ -27,11 +27,9 @@ app.config["JWT_SECRET_KEY"] = "a-very-strong-and-secret-key-that-you-should-cha
 app.config["ALLOWED_IPS"] = ["127.0.0.1", "82.25.126.162","43.204.137.19","147.93.20.219","168.231.123.176"] 
 jwt = JWTManager(app)
 # 🔹 Step 2: Initialize Firebase App
-firebase_admin.initialize_app(cred)
+
 
 # 🔹 Step 3: Now safely use Firestore
-db = firestore.client()
-print("✅ Firebase & Firestore initialized successfully!")
 try:
     from pygeomag import GeoMag
     geo = GeoMag()
