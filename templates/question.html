@@ -3,376 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flight Critical Point Calculator</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <title>ETP Question Generator</title>
+    <!-- Add Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --accent-color: #3498db;
-            --success-color: #2ecc71;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --light-bg: #f8f9fa;
-            --dark-bg: #343a40;
-            --text-color: #333;
-            --light-text: #f8f9fa;
-            --border-radius: 8px;
-            --box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f4f7f9;
+            color: #343a40;
+        }
+        .container {
+            background-color: transparent;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .button-group {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        button {
+            background: linear-gradient(145deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            margin: 0 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+        }
+        button:disabled {
+            background: #6c757d;
+            box-shadow: none;
+            cursor: not-allowed;
         }
         
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: var(--text-color); background-color: var(--light-bg); }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        /* Card-based layout for each section */
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+            overflow: hidden; /* Ensures border-left is contained */
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        .card-header i {
+            margin-right: 15px;
+            font-size: 1.2em;
+        }
+        .card-body {
+            padding: 20px;
+            line-height: 1.7;
+        }
+
+        /* Specific card styling */
+        .question-card .card-header { color: #007bff; }
+        .options-card .card-header { color: #6f42c1; }
+        .params-card .card-header { color: #fd7e14; }
+        .solution-card { border-left: 5px solid #28a745; }
+        .solution-card .card-header { color: #28a745; }
+        .answer-card { border-left: 5px solid #17a2b8; }
+        .answer-card .card-header { color: #17a2b8; }
         
-        header { background-color: var(--primary-color); color: var(--light-text); padding: 20px 0; box-shadow: var(--box-shadow); }
-        header .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;}
-        .logo { display: flex; align-items: center; gap: 10px; }
-        .logo i { font-size: 2rem; }
-        h1 { font-size: 1.8rem; font-weight: 600; }
-        
-        .auth-status {
-            font-size: 0.9rem;
-            padding: 5px 10px;
+        .option {
+            margin-bottom: 10px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
             border-radius: 5px;
-            font-weight: 500;
         }
-        .auth-status.authenticating { background-color: var(--warning-color); }
-        .auth-status.success { background-color: var(--success-color); }
-        .auth-status.failed { background-color: var(--danger-color); }
-
-        main { padding: 30px 0; }
-        .card { background-color: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); padding: 20px; margin-bottom: 30px; }
-        .input-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .input-group { flex: 1; min-width: 200px; }
-        label { display: block; margin-bottom: 8px; font-weight: 500; }
-        select, input[type="checkbox"], input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: var(--border-radius); font-size: 1rem; }
-        .checkbox-group { display: flex; align-items: center; gap: 10px; padding: 12px 0; }
         
-        button { background-color: var(--accent-color); color: white; border: none; padding: 12px 20px; border-radius: var(--border-radius); cursor: pointer; font-size: 1rem; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s, opacity 0.3s; }
-        button:hover { background-color: #2980b9; }
-        button:disabled { background-color: #95a5a6; cursor: not-allowed; opacity: 0.7; }
-
-        .loader { display: none; text-align: center; padding: 20px; }
-        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); border-radius: 50%; border-top: 4px solid var(--accent-color); width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .results { display: none; }
-        .section-title { border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; margin-bottom: 20px; color: var(--primary-color); display: flex; align-items: center; gap: 10px; font-size: 1.5rem; }
-        .question { background-color: var(--light-bg); padding: 15px; border-radius: var(--border-radius); margin-bottom: 20px; border-left: 4px solid var(--accent-color); }
-        .params-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .param-card { background-color: var(--light-bg); padding: 15px; border-radius: var(--border-radius); border-left: 4px solid var(--primary-color); }
-        .param-title { font-weight: 600; margin-bottom: 5px; color: var(--primary-color); }
-        .param-value { font-size: 1.1rem; }
-        
-        .map-container { height: 600px; border-radius: var(--border-radius); overflow: hidden; border: 1px solid #ddd; position: relative; background-color: #f0f0f0; }
-        .map-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 15px; color: #666; text-align: center; }
-        iframe { width: 100%; height: 100%; border: none; }
-        
-        .error { background-color: #fdeded; color: var(--danger-color); padding: 15px; border-radius: var(--border-radius); margin-bottom: 20px; border-left: 4px solid var(--danger-color); display: none; }
-        
-        .json-container { background-color: #1e1e1e; border-radius: var(--border-radius); padding: 20px; margin-top: 15px; position: relative; max-height: 400px; overflow-y: auto; }
-        .json-code { color: #d4d4d4; font-family: 'Courier New', Monaco, monospace; font-size: 0.9rem; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
-        .copy-btn { position: absolute; top: 10px; right: 10px; background-color: var(--accent-color); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; z-index: 1; }
-        .copy-btn:hover { background-color: #2980b9; }
-        .toggle-json { background-color: var(--warning-color); margin-left: 10px; padding: 8px 16px; font-size: 0.9rem; }
-        .toggle-json:hover { background-color: #e67e22; }
-        .json-section { display: none; margin-top: 20px; }
-        
-        footer { background-color: var(--dark-bg); color: var(--light-text); padding: 20px 0; text-align: center; margin-top: 30px; }
-
-        .step-item { background-color: #eaf3fb; border: 1px solid #c5d9e8; padding: 15px; margin-bottom: 12px; border-radius: var(--border-radius); }
-        .steps-placeholder { text-align: center; padding: 20px; color: #666; }
-        .steps-placeholder i { font-size: 36px; color: #ccc; margin-bottom: 10px; display: block; }
-        
-        /* New styles for login form */
-        .login-container { max-width: 400px; margin: 50px auto; }
-        .login-card { background-color: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); padding: 30px; }
-        .login-card h2 { text-align: center; margin-bottom: 20px; color: var(--primary-color); }
-        .login-form .input-group { margin-bottom: 15px; }
-        .login-form button { width: 100%; justify-content: center; }
-        .main-content { display: none; }
-        
-        @media (max-width: 768px) {
-            .input-form, header .container { flex-direction: column; align-items: stretch; }
-            button { width: 100%; justify-content: center; }
-            .toggle-json { margin-left: 0; margin-top: 10px; }
-            .login-container { padding: 0 20px; }
+        /* Solution Steps Styling */
+        .solution-steps {
+            list-style: none;
+            padding-left: 0;
         }
+        .solution-steps li {
+            margin-bottom: 15px;
+            padding-left: 25px;
+            position: relative;
+        }
+        .solution-steps li::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-weight: 700;
+            color: #28a745;
+        }
+        .solution-formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e9f5ec;
+            padding: 8px;
+            border-radius: 4px;
+            display: block;
+            margin-top: 5px;
+        }
+        
+        /* Final Answer Styling */
+        .final-answer-text {
+            font-size: 1.5em;
+            font-weight: 700;
+            text-align: center;
+            color: #17a2b8;
+        }
+
+        .parameters {
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .loading, .error {
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+        .loading { color: #666; font-style: italic; }
+        .error { background-color: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <div class="logo">
-                <i class="fas fa-plane"></i>
-                <h1>Flight Critical Point Calculator</h1>
-            </div>
-            <div id="authStatus" class="auth-status authenticating">
-                <i class="fas fa-sync-alt fa-spin"></i> Authenticating...
-            </div>
-        </div>
-    </header>
-    
-    <main class="container">
-        <div id="loginContainer" class="login-container">
-            <div class="login-card">
-                <h2>Login</h2>
-                <form id="loginForm" class="login-form">
-                    <div class="input-group">
-                        <label for="username">Username:</label>
-                        <input type="text" id="username" name="username" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="password">Password:</label>
-                        <input type="password" id="password" name="password" required>
-                    </div>
-                    <button type="submit"><i class="fas fa-sign-in-alt"></i> Login</button>
-                </form>
-                <div id="loginError" class="error" style="display: none;">
-                    <i class="fas fa-exclamation-circle"></i> <span id="loginErrorText"></span>
-                </div>
-            </div>
+    <div class="container">
+        <h1><i class="fas fa-plane-departure"></i> ETP Question Generator</h1>
+        
+        <div class="button-group">
+            <button onclick="getQuestion(2)" id="btn2marks">Generate 2 Marks Question</button>
+            <button onclick="getQuestion(3)" id="btn3marks">Generate 3 Marks Question</button>
         </div>
         
-        <div id="mainContent" class="main-content">
-            <div class="card">
-                <form id="generateForm" class="input-form">
-                    <div class="input-group">
-                        <label for="reference">ERC Reference:</label>
-                        <select id="reference" name="reference" required><option value="" disabled selected>Select an option</option><option value="L1">L1</option><option value="L2">L2</option><option value="L3">L3</option><option value="L4">L4</option><option value="L5">L5</option><option value="L6">L6</option><option value="L7">L7</option><option value="L8">L8</option></select>
-                    </div>
-                    <div class="input-group">
-                        <label for="num_airports">Number of Airports:</label>
-                        <select id="num_airports" name="num_airports" required><option value="" disabled selected>Select number</option><option value="3">3</option><option value="4">4</option></select>
-                    </div>
-                    <div class="input-group">
-                        <label for="marks">Marks:</label>
-                        <select id="marks" name="marks" required><option value="" disabled selected>Select marks</option><option value="2">2</option><option value="3">3</option></select>
-                    </div>
-                    <div class="input-group checkbox-group">
-                        <input type="checkbox" id="show_map" name="show_map"><label for="show_map">Show Map</label>
-                    </div>
-                    <button type="submit"><i class="fas fa-calculator"></i> Generate Question</button>
-                    <button type="button" id="toggleJson" class="toggle-json" style="display: none;"><i class="fas fa-code"></i> Show JSON</button>
-                </form>
-            </div>
+        <div id="questionDisplayArea"></div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i> Generating Question...
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function getQuestion(marks) {
+            document.getElementById('btn2marks').disabled = true;
+            document.getElementById('btn3marks').disabled = true;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('questionDisplayArea').innerHTML = '';
+            document.getElementById('error').style.display = 'none';
             
-            <div id="errorMessage" class="error"><i class="fas fa-exclamation-circle"></i> <span id="errorText"></span></div>
-            <div id="loader" class="loader"><div class="spinner"></div><p>Calculating flight details...</p></div>
+            try {
+                const response = await fetch('/api/question', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ marks: marks })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    displayQuestion(result);
+                } else {
+                    showError(result.error || 'Failed to generate question');
+                }
+                
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                document.getElementById('btn2marks').disabled = false;
+                document.getElementById('btn3marks').disabled = false;
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        function displayQuestion(result) {
+            const { question_type, data } = result;
+            const { question, parameters, answer } = data;
+            const displayArea = document.getElementById('questionDisplayArea');
             
-            <div id="results" class="results">
-                <div class="card flight-details">
-                    <h2 class="section-title"><i class="fas fa-info-circle"></i> Flight Details</h2>
-                    <div id="question" class="question"></div>
-                    <h3 class="section-title"><i class="fas fa-clipboard-list"></i> Parameters</h3>
-                    <div id="parameters" class="params-grid"></div>
-                    <div id="jsonSection" class="json-section">
-                        <h3 class="section-title"><i class="fas fa-code"></i> Raw JSON Response</h3>
-                        <div class="json-container">
-                            <button class="copy-btn" onclick="copyJsonToClipboard()"><i class="fas fa-copy"></i> Copy</button>
-                            <pre id="jsonCode" class="json-code"></pre>
+            let html = '';
+
+            // 1. Question Card
+            html += `
+                <div class="card question-card">
+                    <div class="card-header"><i class="fas fa-question-circle"></i> Question (${question_type})</div>
+                    <div class="card-body">${question.replace(/\n/g, '<br>')}</div>
+                </div>
+            `;
+
+            // 2. Options Card
+            if (parameters.options) {
+                html += `
+                    <div class="card options-card">
+                        <div class="card-header"><i class="fas fa-list-ul"></i> Options</div>
+                        <div class="card-body">`;
+                Object.entries(parameters.options).forEach(([key, value]) => {
+                    html += `<div class="option"><strong>${key}:</strong> ${value}</div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // 3. Parameters Card
+            const paramsForDisplay = { ...parameters };
+            delete paramsForDisplay.options;
+            delete paramsForDisplay.solution;
+            html += `
+                <div class="card params-card">
+                    <div class="card-header"><i class="fas fa-cogs"></i> Given Parameters</div>
+                    <div class="card-body">
+                        <div class="parameters">${JSON.stringify(paramsForDisplay, null, 2)}</div>
+                    </div>
+                </div>
+            `;
+
+            // 4. Solution Card
+            if (parameters.solution) {
+                const sol = parameters.solution;
+                html += `
+                    <div class="card solution-card">
+                        <div class="card-header"><i class="fas fa-calculator"></i> Step-by-Step Solution</div>
+                        <div class="card-body">
+                            <ol class="solution-steps">
+                                <li data-step="1. "><strong>Formula:</strong> The core formula to find the ETP distance from the departure point is:
+                                    <code class="solution-formula">${sol.formula}</code>
+                                </li>
+                                <li data-step="2. "><strong>Substitution:</strong> Replace the variables with the given values:
+                                    <code class="solution-formula">${sol.substitution}</code>
+                                </li>
+                                <li data-step="3. "><strong>Calculation:</strong> Perform the calculation to find the final distance:
+                                    <code class="solution-formula">${sol.calculation}</code>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 5. Final Answer Card
+            html += `
+                <div class="card answer-card">
+                    <div class="card-header"><i class="fas fa-check-circle"></i> Final Answer</div>
+                    <div class="card-body">
+                        <div class="final-answer-text">
+                            ETP Distance: ${answer.etp_distance} ${answer.units.distance}<br>
+                            Time to ETP: ${answer.units.time} minutes
                         </div>
                     </div>
                 </div>
-                <div id="stepsCard" class="card">
-                    <h2 class="section-title"><i class="fas fa-list-ol"></i> Calculation Steps</h2>
-                    <div id="stepsContainer"><div class="steps-placeholder"><i class="fas fa-stream"></i><p>Steps will appear here.</p></div></div>
-                </div>
-                <div id="mapCard" class="card">
-                    <h2 class="section-title"><i class="fas fa-map-marked-alt"></i> Flight Map</h2>
-                    <div id="mapContainer" class="map-container"><div class="map-placeholder"><i class="fas fa-map-marked-alt" style="font-size:48px;"></i><p>Generate a question to view the flight map</p></div></div>
-                </div>
-            </div>
-        </div>
-    </main>
-    
-    <footer><div class="container"><p>© 2025 Flight Critical Point Calculator</p></div></footer>
-
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script>
-        $(document).ready(function() {
-            let accessToken = null;
-            let previousMapUrl = null;
-            const validCredentials = { username: 'admin', password: 'password123' }; // Hardcoded credentials
-
-            // Handle login form submission
-            $('#loginForm').submit(function(e) {
-                e.preventDefault();
-                const username = $('#username').val().trim();
-                const password = $('#password').val().trim();
-
-                if (username === validCredentials.username && password === validCredentials.password) {
-                    $('#loginContainer').hide();
-                    $('#mainContent').show();
-                    loginAndGetToken(); // Proceed with server-side authentication
-                } else {
-                    showLoginError('Invalid username or password.');
-                }
-            });
-
-            function loginAndGetToken() {
-                updateAuthStatus('authenticating', '<i class="fas fa-sync-alt fa-spin"></i> Authenticating...');
-                $('#generateForm button, #generateForm select').prop('disabled', true);
-
-                $.ajax({
-                    url: '/login',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    success: function(response) {
-                        if (response.access_token) {
-                            accessToken = response.access_token;
-                            console.log("Authentication successful.");
-                            updateAuthStatus('success', '<i class="fas fa-check-circle"></i> Authenticated');
-                            $('#generateForm button, #generateForm select').prop('disabled', false);
-                        } else {
-                            handleAuthError('Invalid token received from server.');
-                        }
-                    },
-                    error: function(xhr) {
-                        const errorMsg = xhr.responseJSON?.msg || 'Could not connect to the server.';
-                        console.error("Authentication failed:", errorMsg);
-                        handleAuthError(errorMsg);
-                    }
-                });
-            }
-
-            function updateAuthStatus(statusClass, message) {
-                $('#authStatus').removeClass('authenticating success failed').addClass(statusClass).html(message);
-            }
-
-            function handleAuthError(message) {
-                updateAuthStatus('failed', '<i class="fas fa-times-circle"></i> Authentication Failed');
-                showError(`<strong>Authentication Failed:</strong> ${message}. This application requires authorization. Please ensure your IP address is on the allowlist and contact the administrator.`);
-                $('#generateForm button, #generateForm select, #generateForm input').prop('disabled', true);
-            }
-
-            function showLoginError(message) {
-                $('#loginErrorText').html(message);
-                $('#loginError').fadeIn(300);
-            }
-
-            $('#generateForm').submit(function(e) {
-                e.preventDefault();
-
-                if (!accessToken) {
-                    showError('Not authenticated. Please wait for authentication to complete or reload the page.');
-                    return;
-                }
-                
-                $('#errorMessage').hide();
-                $('#results').hide();
-                $('#loader').show();
-                
-                const requestData = {
-                    reference: $('#reference').val().trim().toUpperCase(),
-                    num_airports: $('#num_airports').val().trim(),
-                    marks: $('#marks').val().trim(),
-                    show_map: $('#show_map').is(':checked')
-                };
-
-                $.ajax({
-                    url: '/generate_question',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    headers: { 'Authorization': 'Bearer ' + accessToken },
-                    data: JSON.stringify(requestData),
-                    success: function(data) {
-                        $('#loader').hide();
-                        if (!data || !data.details) {
-                            showError('Invalid or incomplete response from server.');
-                            return;
-                        }
-                        displayResults(data);
-                    },
-                    error: function(xhr) {
-                        $('#loader').hide();
-                        const errorMsg = xhr.responseJSON?.msg || xhr.responseJSON?.error || 'Error generating question.';
-                        showError(errorMsg);
-                    }
-                });
-            });
+            `;
             
-            function displayResults(data) {
-                const details = data.details;
-                $('#question').html(`<p>${data.question}</p>`);
-
-                const parametersHtml = `
-                    <div class="param-card"><div class="param-title">Departure</div><div class="param-value">${details.departure_name ?? 'N/A'} (${details.departure ?? 'N/A'})</div></div>
-                    <div class="param-card"><div class="param-title">Arrival</div><div class="param-value">${details.arrival_name ?? 'N/A'} (${details.arrival ?? 'N/A'})</div></div>
-                    <div class="param-card"><div class="param-title">Alternate 1</div><div class="param-value">${details.land1_name ?? 'N/A'} (${details.land1 ?? 'N/A'})</div></div>
-                    <div class="param-card"><div class="param-title">Alternate 2</div><div class="param-value">${details.land2_name ?? 'N/A'} (${details.land2 ?? 'N/A'})</div></div>
-                    <div class="param-card"><div class="param-title">Cruise Level</div><div class="param-value">${details.cruise_level ? `FL${details.cruise_level}` : 'N/A'}</div></div>
-                    <div class="param-card"><div class="param-title">True Airspeed</div><div class="param-value">${details.tas_single_engine ?? 'N/A'} kt</div></div>
-                    <div class="param-card"><div class="param-title">Wind</div><div class="param-value">${details.wind_single_engine?.direction ?? 'N/A'}° / ${details.wind_single_engine?.speed ?? 'N/A'} kt</div></div>
-                    <div class="param-card"><div class="param-title">Ground Speed to Alt 1</div><div class="param-value">${details.gs ? Math.round(details.gs) : 'N/A'} kt</div></div>
-                    <div class="param-card"><div class="param-title">Ground Speed to Alt 2</div><div class="param-value">${details.cs ? Math.round(details.cs) : 'N/A'} kt</div></div>
-                    <div class="param-card"><div class="param-title">Time Difference</div><div class="param-value">${details.time ?? 'N/A'} sec</div></div>
-                    <div class="param-card"><div class="param-title">Distance to Alt 1</div><div class="param-value">${details.geodesic?.distance_to_P3_nm_1 ? Math.round(details.geodesic.distance_to_P3_nm_1) : 'N/A'} nm</div></div>
-                    <div class="param-card"><div class="param-title">Distance to Alt 2</div><div class="param-value">${details.geodesic?.distance_to_P4_nm ? Math.round(details.geodesic.distance_to_P4_nm) : 'N/A'} nm</div></div>
-                    <div class="param-card"><div class="param-title">Answer</div><div class="param-value">${details.Ans ? details.Ans.toFixed(1) : 'N/A'} nm</div></div>
-                    <div class="param-card"><div class="param-title">Wind Vector</div><div class="param-value">${details.geodesic?.distance_to_degree ? Math.round(details.geodesic.distance_to_degree) : 'N/A'} nm</div></div>
-                    <div class="param-card"><div class="param-title">Nil Point Distance to ${details.land1_name ?? 'Alternate'}</div><div class="param-value">${details.geodesic?.distance_to_P3_nm ? Math.round(details.geodesic.distance_to_P3_nm) : 'N/A'} nm</div></div>
-                `;
-                $('#parameters').html(parametersHtml);
-                
-                const stepsContainer = $('#stepsContainer');
-                stepsContainer.empty();
-                if (details.steps && Array.isArray(details.steps) && details.steps.length > 0) {
-                    details.steps.forEach(step => {
-                        stepsContainer.append(`<div class="step-item"><div><strong>${step.title || 'Step'}</strong><p>${step.description || ''}</p><p><em>${step.calculation || ''}</em></p><p><strong>${step.result || ''}</strong></p></div></div>`);
-                    });
-                } else {
-                    stepsContainer.html('<div class="steps-placeholder"><i class="fas fa-info-circle"></i><p>Calculation steps not available.</p></div>');
-                }
-
-                $('#jsonCode').text(JSON.stringify(data, null, 2));
-                $('#toggleJson').show();
-                
-                if ($('#show_map').is(':checked')) {
-                    if (data.map_data && data.details.geodesic_1?.map_html) {
-                        if (previousMapUrl) URL.revokeObjectURL(previousMapUrl);
-                        const blob = new Blob([data.details.geodesic_1.map_html], {type: 'text/html'});
-                        const url = URL.createObjectURL(blob);
-                        previousMapUrl = url;
-                        $('#mapContainer').html(`<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`);
-                    } else {
-                        $('#mapContainer').html('<div class="map-placeholder"><i class="fas fa-map-marked-alt" style="font-size:48px;"></i><p>Map data not available for this scenario.</p></div>');
-                    }
-                    $('#mapCard').show();
-                } else {
-                    $('#mapCard').hide();
-                }
-
-                $('#results').fadeIn(300);
-            }
-
-            $('#toggleJson').click(function() {
-                const $jsonSection = $('#jsonSection');
-                $jsonSection.slideToggle();
-                $(this).html($jsonSection.is(':visible') ? '<i class="fas fa-code"></i> Hide JSON' : '<i class="fas fa-code"></i> Show JSON');
-            });
-
-            function showError(message) {
-                $('#errorText').html(message);
-                $('#errorMessage').fadeIn(300);
-            }
-            
-            function copyJsonToClipboard() {
-                const jsonText = document.getElementById('jsonCode').textContent;
-                navigator.clipboard.writeText(jsonText).then(() => {
-                    const copyBtn = document.querySelector('.copy-btn');
-                    const originalText = copyBtn.innerHTML;
-                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                    copyBtn.style.backgroundColor = 'var(--success-color)';
-                    setTimeout(() => {
-                        copyBtn.innerHTML = originalText;
-                        copyBtn.style.backgroundColor = '';
-                    }, 2000);
-                });
-            }
-        });
+            displayArea.innerHTML = html;
+        }
+        
+        function showError(message) {
+            document.getElementById('error').textContent = `⚠️ Error: ${message}`;
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('questionDisplayArea').innerHTML = '';
+        }
     </script>
 </body>
 </html>

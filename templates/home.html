@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Question</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h3 { font-size: 16px; color: gray; margin-top: 0; text-align: left; }
+        h2 { margin-bottom: 20px; font-size: 18px; text-align: left; max-width: 700px; line-height: 1.4; word-wrap: break-word; }
+        .correct, .wrong, button, .home-button {
+            border-radius: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+            margin-top: 15px;
+            border: none;
+        }
+        .correct { background-color: green; color: white; }
+        .wrong { background-color: red; color: white; }
+        button[type="submit"], #submit-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        button[type="submit"]:hover, #submit-btn:hover { background-color: #45a049; }
+        input[type="number"] {
+            width: 200px;
+            height: 35px;
+            font-size: 16px;
+            padding: 5px 10px;
+            box-sizing: border-box;
+        }
+        .answer-box {
+            margin-top: 15px;
+            background: #f2f2f2;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-line;
+            font-family: monospace;
+        }
+        .home-button {
+            display: inline-block;
+            background-color: #fff8b3;
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 20px;
+            font-weight: bold;
+            border: 1px solid #e6d96f;
+        }
+        .home-button:hover { background-color: #ffef85; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<!-- Container for question info -->
+<div id="question-container">
+    <h3 id="question-label"></h3>
+    <h2 id="question-text"></h2>
+    <form id="answer-form" onsubmit="submitAnswer(event)">
+        <div id="options-container"></div>
+        <input id="typein-input" type="number" class="hidden" required>
+        <br>
+        <button type="submit" id="submit-btn">Submit</button>
+    </form>
+</div>
+
+<div id="result-container"></div>
+
+<!-- Back to Home button -->
+<!-- Corrected link to point back to the main selection page -->
+<br><a href="/dencity" class="home-button">Choose Again</a>
+
+<script>
+// These Jinja2 variables are passed from the Flask `render_template` function
+const marks = "{{ marks }}";
+const questionType = "{{ question_type }}";
+
+let currentQuestion = null;
+
+// On page load, fetch question from API
+window.onload = function() {
+    fetchQuestion();
+};
+
+// Fetch a question from the API
+function fetchQuestion() {
+    // Add logging to see what we are sending
+    console.log("Requesting question with:", { marks: marks, question_type: questionType });
+
+    fetch('/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ marks: marks, question_type: questionType })
+    })
+    .then(response => {
+        if (!response.ok) {
+            // If response is not OK (e.g., 400, 500), read the error message
+            return response.json().then(err => { throw new Error(err.error) });
+        }
+        return response.json();
+    })
+    .then(q => {
+        currentQuestion = q;
+        document.getElementById('question-label').innerText = q.label;
+        document.getElementById('question-text').innerText = q.question;
+
+        renderOptions(q);
+        document.getElementById('result-container').innerHTML = '';
+    })
+    .catch(error => {
+        console.error("Error fetching question:", error);
+        document.getElementById('question-text').innerText = `Error fetching question: ${error.message}. Please check the console and server logs.`;
+    });
+}
+
+// Render MCQ or type-in options based on question type
+function renderOptions(q) {
+    let optionsDiv = document.getElementById('options-container');
+    optionsDiv.innerHTML = '';
+    let typein = document.getElementById('typein-input');
+
+    if (q.type === 'mcq') {
+        typein.className = 'hidden';
+        typein.required = false;  
+
+        q.options.forEach((opt) => {
+            let label = document.createElement('label');
+            let input = document.createElement('input');
+            input.type = 'radio';
+            input.name = 'user_answer';
+            
+            // This regex correctly strips units like " ft" or " °C"
+            let cleanedValue = opt.value.replace(/[^0-9\-]/g, "");
+            input.value = cleanedValue;
+            input.required = true;
+
+            label.appendChild(input);
+            label.appendChild(document.createTextNode(` ${opt.label}. ${opt.value}`));
+            optionsDiv.appendChild(label);
+            optionsDiv.appendChild(document.createElement('br'));
+        });
+
+    } else {
+        typein.className = '';
+        typein.required = true;
+        typein.value = '';
+        typein.name = 'user_answer';
+        typein.placeholder = `Enter answer`;
+    }
+}
+
+// Form submission handler
+function submitAnswer(event) {
+    event.preventDefault();
+
+    let userAnswer = '';
+    if (currentQuestion.type === 'mcq') {
+        const selectedRadio = document.querySelector('input[name="user_answer"]:checked');
+        if (selectedRadio) {
+            userAnswer = selectedRadio.value;
+        } else {
+            alert("Please select an option.");
+            return;
+        }
+    } else {
+        userAnswer = document.getElementById('typein-input').value.trim();
+        if (!userAnswer) {
+            alert("Please enter an answer.");
+            return;
+        }
+    }
+
+    fetch('/api/check_answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            user_answer: userAnswer,
+            correct_answer: currentQuestion.correct_answer,
+        })
+    })
+    .then(resp => resp.json())
+    .then(res => {
+        showResult(res.is_correct);
+    })
+    .catch(err => {
+        console.error("Error submitting answer:", err);
+    });
+}
+
+// Show result and the "Show Answer" button
+function showResult(isCorrect) {
+    let resultContainer = document.getElementById('result-container');
+    let buttonClass = isCorrect ? 'correct' : 'wrong';
+    let buttonText = isCorrect ? 'Correct! Show Answer' : 'Incorrect. Show Answer';
+    
+    resultContainer.innerHTML = `<button id="show-answer-btn" class="${buttonClass}" onclick="showAnswer()">${buttonText}</button>`;
+}
+
+// Show the detailed solution
+function showAnswer() {
+    let q = currentQuestion;
+    let solution = '';
+    if (q.category === 'pressure') {
+        solution = `<div class="answer-box">
+            <b>Formula:</b> PA = Elevation + (1013 - QNH) × 30<br>
+            <b>Substitution:</b> PA = ${q.elev} + (1013 - ${q.qnh}) × 30<br>
+            <b>Answer:</b> ${q.correct_answer} ft
+        </div>`;
+    } else if (q.category === 'pressure_2mark') {
+         solution = `<div class="answer-box">
+            <b>1. Elevation Lookup:</b> ${q.airport} = ${q.elev} ft<br>
+            <b>2. Formula:</b> Pressure Altitude = Elevation + (1013 - QNH) × 30<br>
+            <b>3. Substitution:</b> PA = ${q.elev} + (1013 - ${q.qnh}) × 30<br>
+            <b>4. Calculation:</b> = ${q.elev} + ${q.calculation_value}<br>
+            <b>5. Rounded Answer:</b> ${q.correct_answer} ft
+        </div>`;
+    } else if (q.category === 'density') {
+        solution = `<div class="answer-box">
+            <b>1. ISA Temp Formula:</b> 15 − 2 × (Pressure Height / 1000)<br>
+            <b>2. ISA Temp Calc:</b> 15 − 2 × (${(q.pressure_height/1000).toFixed(1)}) = ${q.isa_temp}°C<br>
+            <b>3. ISA Deviation:</b> OAT - ISA Temp = ${q.oat}°C − ${q.isa_temp}°C<br>
+            <b>4. Answer:</b> ${q.correct_answer} °C
+        </div>`;
+    } else if (q.category === 'density_2mark') {
+        solution = `<div class="answer-box">
+            <b>1. Pressure Height:</b> ${q.ph_rounded} ft (Calculated from elevation and QNH)<br>
+            <b>2. ISA Temp:</b> 15 - 2 × (${(q.ph_rounded/1000).toFixed(2)}) = ${q.isa_temp}°C<br>
+            <b>3. ISA Deviation:</b> ${q.oat}°C - ${q.isa_temp}°C = ${q.isa_dev}°C<br>
+            <b>4. Temp Correction:</b> ISA Dev × 120 = ${q.isa_dev} × 120 = ${q.temp_effect} ft<br>
+            <b>5. Density Height:</b> Pressure Height + Correction = ${q.ph_rounded} + ${q.temp_effect}<br>
+            <b>6. Rounded Answer:</b> ${q.correct_answer} ft
+        </div>`;
+    }
+    // Append solution below the button without replacing it
+    document.getElementById('result-container').innerHTML += solution;
+    // Disable the button after clicking
+    document.getElementById('show-answer-btn').disabled = true;
+}
+
+</script>
+
+</body>
+</html>

@@ -3,11 +3,66 @@ import logging
 from PIL import Image
 from io import BytesIO
 import base64
+import math
 from folium.plugins import MousePosition
 from geographiclib.geodesic import Geodesic
 import folium
 from geographiclib.geodesic import Geodesic
+def calculate_etp(distance, gs_return, gs_outbound):
+    """
+    Calculate Equi-Time Point (ETP)
+    wind_type: 'headwind' or 'tailwind'
+    Returns ETP distance and time to ETP
+    """
+    
+    
+    # Calculate ETP distance
+    etp_distance = (distance * gs_return) / (gs_outbound + gs_return)
+    
+    # Calculate time to ETP (in hours)
+    time_to_etp = etp_distance / gs_outbound
+    
+    return round(etp_distance, 2), round(time_to_etp * 60, 2)  # Convert time to minutes
 
+def haversine_distance(lat1, lon1, lat2, lon2, unit='nm'):
+    """
+    Calculate the great-circle distance between two points on the Earth.
+    
+    Parameters:
+    lat1, lon1 (float): Latitude and longitude of point 1 (in degrees)
+    lat2, lon2 (float): Latitude and longitude of point 2 (in degrees)
+    unit (str): Unit of distance - 'nm' for nautical miles (default),
+               'km' for kilometers, 'mi' for statute miles
+    
+    Returns:
+    float: Distance between the two points in the specified unit
+    """
+    
+    # Convert latitude and longitude from degrees to radians
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    
+    # Radius of Earth in kilometers
+    r_km = 6371.0
+    
+    # Calculate distance in kilometers first
+    distance = c * r_km
+    
+    # Convert to requested unit
+    if unit == 'nm':
+        # 1 nautical mile = 1.852 km
+        distance /= 1.852
+    elif unit == 'mi':
+        # Convert to statute miles
+        distance *= 0.621371
+    # else keep in kilometers
+    
+    return distance
 class Point:
     def __init__(self, lat, long):
         self.lat = lat

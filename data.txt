@@ -1,0 +1,22 @@
+{
+    "Sydney/Bankstown": 34,
+    "Sydney/Kingsford smith": 21,
+    "Canberra": 1887,
+    "Brisbane": 15,
+    "Adelaide": 20,
+    "Townsville": 18,
+    "Perth": 67,
+    "Cairns": 10,
+    "Hobart": 13,
+    "Alice springs": 1789,
+    "Sunshine coast": 15,
+    "Launceston": 562,
+    "Darwin": 103,
+    "Melbourne": 434,
+    "Broome": 57,
+    "Port Hedland": 33,
+    "Horn Island": 43,
+    "Norfolk island": 371,
+    "Albury": 539,
+    "Ballina Byron gateway": 7
+}
