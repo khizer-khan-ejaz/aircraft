@@ -22,236 +22,83 @@
             --box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: var(--text-color); background-color: var(--light-bg); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--light-bg);
-            padding: 0;
-            margin: 0;
-        }
+        header { background-color: var(--primary-color); color: var(--light-text); padding: 20px 0; box-shadow: var(--box-shadow); }
+        header .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;}
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo i { font-size: 2rem; }
+        h1 { font-size: 1.8rem; font-weight: 600; }
         
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        header {
-            background-color: var(--primary-color);
-            color: var(--light-text);
-            padding: 20px 0;
-            box-shadow: var(--box-shadow);
-        }
-        
-        header .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .logo i {
-            font-size: 2rem;
-        }
-        
-        h1 {
-            font-size: 1.8rem;
-            font-weight: 600;
-        }
-        
-        main {
-            padding: 30px 0;
-        }
-        
-        .card {
-            background-color: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .input-form {
-            display: flex;
-            gap: 10px;
-            align-items: flex-end; /* Align items to bottom for button */
-            flex-wrap: wrap;
-        }
-        
-        .input-group {
-            flex: 1;
-            min-width: 200px; /* Adjusted min-width */
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        
-        select, input[type="text"] { /* Style select same as input */
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            background-color: white; /* Ensure select bg is white */
-        }
-        
-        button {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.3s;
-            height: 48.4px; /* Match input height */
-        }
-        
-        button:hover {
-            background-color: #2980b9;
-        }
-        
-        .loader {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-radius: 50%;
-            border-top: 4px solid var(--accent-color);
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .results {
-            display: none;
-        }
-        
-        .flight-details {
-            margin-bottom: 20px;
-        }
-        
-        .section-title {
-            border-bottom: 2px solid var(--accent-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.5rem;
-        }
-        
-        .question {
-            background-color: var(--light-bg);
-            padding: 15px;
-            border-radius: var(--border-radius);
-            margin-bottom: 20px;
-            border-left: 4px solid var(--accent-color);
-            line-height: 1.7;
-        }
-        
-        .params-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjusted for better fit */
-            gap: 15px;
-        }
-        
-        .param-card {
-            background-color: #fdfdff; /* Slightly off-white for cards */
-            padding: 15px;
-            border-radius: var(--border-radius);
-            border-left: 4px solid var(--primary-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .param-title {
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--primary-color);
+        .auth-status {
             font-size: 0.9rem;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: 500;
         }
+        .auth-status.authenticating { background-color: var(--warning-color); }
+        .auth-status.success { background-color: var(--success-color); }
+        .auth-status.failed { background-color: var(--danger-color); }
+
+        main { padding: 30px 0; }
+        .card { background-color: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); padding: 20px; margin-bottom: 30px; }
+        .input-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .input-group { flex: 1; min-width: 200px; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; }
+        select, input[type="checkbox"], input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: var(--border-radius); font-size: 1rem; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; padding: 12px 0; }
         
-        .param-value {
-            font-size: 1rem;
-            word-wrap: break-word;
-        }
+        button { background-color: var(--accent-color); color: white; border: none; padding: 12px 20px; border-radius: var(--border-radius); cursor: pointer; font-size: 1rem; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: background-color 0.3s, opacity 0.3s; }
+        button:hover { background-color: #2980b9; }
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; opacity: 0.7; }
+
+        .loader { display: none; text-align: center; padding: 20px; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); border-radius: 50%; border-top: 4px solid var(--accent-color); width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .map-container {
-            height: 600px;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            border: 1px solid #ddd;
-        }
+        .results { display: none; }
+        .section-title { border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; margin-bottom: 20px; color: var(--primary-color); display: flex; align-items: center; gap: 10px; font-size: 1.5rem; }
+        .question { background-color: var(--light-bg); padding: 15px; border-radius: var(--border-radius); margin-bottom: 20px; border-left: 4px solid var(--accent-color); }
+        .params-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .param-card { background-color: var(--light-bg); padding: 15px; border-radius: var(--border-radius); border-left: 4px solid var(--primary-color); }
+        .param-title { font-weight: 600; margin-bottom: 5px; color: var(--primary-color); }
+        .param-value { font-size: 1.1rem; }
         
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
+        .map-container { height: 600px; border-radius: var(--border-radius); overflow: hidden; border: 1px solid #ddd; position: relative; background-color: #f0f0f0; }
+        .map-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 15px; color: #666; text-align: center; }
+        iframe { width: 100%; height: 100%; border: none; }
         
-        .error {
-            background-color: #fdeded;
-            color: var(--danger-color);
-            padding: 15px;
-            border-radius: var(--border-radius);
-            margin-bottom: 20px;
-            border-left: 4px solid var(--danger-color);
-            display: none;
-        }
+        .error { background-color: #fdeded; color: var(--danger-color); padding: 15px; border-radius: var(--border-radius); margin-bottom: 20px; border-left: 4px solid var(--danger-color); display: none; }
         
-        footer {
-            background-color: var(--dark-bg);
-            color: var(--light-text);
-            padding: 20px 0;
-            text-align: center;
-            margin-top: 30px;
-        }
+        .json-container { background-color: #1e1e1e; border-radius: var(--border-radius); padding: 20px; margin-top: 15px; position: relative; max-height: 400px; overflow-y: auto; }
+        .json-code { color: #d4d4d4; font-family: 'Courier New', Monaco, monospace; font-size: 0.9rem; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
+        .copy-btn { position: absolute; top: 10px; right: 10px; background-color: var(--accent-color); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; z-index: 1; }
+        .copy-btn:hover { background-color: #2980b9; }
+        .toggle-json { background-color: var(--warning-color); margin-left: 10px; padding: 8px 16px; font-size: 0.9rem; }
+        .toggle-json:hover { background-color: #e67e22; }
+        .json-section { display: none; margin-top: 20px; }
+        
+        footer { background-color: var(--dark-bg); color: var(--light-text); padding: 20px 0; text-align: center; margin-top: 30px; }
+
+        .step-item { background-color: #eaf3fb; border: 1px solid #c5d9e8; padding: 15px; margin-bottom: 12px; border-radius: var(--border-radius); }
+        .steps-placeholder { text-align: center; padding: 20px; color: #666; }
+        .steps-placeholder i { font-size: 36px; color: #ccc; margin-bottom: 10px; display: block; }
+        
+        /* New styles for login form */
+        .login-container { max-width: 400px; margin: 50px auto; }
+        .login-card { background-color: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); padding: 30px; }
+        .login-card h2 { text-align: center; margin-bottom: 20px; color: var(--primary-color); }
+        .login-form .input-group { margin-bottom: 15px; }
+        .login-form button { width: 100%; justify-content: center; }
+        .main-content { display: none; }
         
         @media (max-width: 768px) {
-            .input-form {
-                flex-direction: column;
-                align-items: stretch; /* Stretch items to full width */
-            }
-            .input-group {
-                min-width: 100%; /* Full width on mobile */
-            }
-            
-            button {
-                width: 100%;
-                justify-content: center;
-            }
-            .params-grid {
-                grid-template-columns: 1fr; /* Single column on mobile */
-            }
+            .input-form, header .container { flex-direction: column; align-items: stretch; }
+            button { width: 100%; justify-content: center; }
+            .toggle-json { margin-left: 0; margin-top: 10px; }
+            .login-container { padding: 0 20px; }
         }
     </style>
 </head>
@@ -259,293 +106,271 @@
     <header>
         <div class="container">
             <div class="logo">
-                <i class="fas fa-plane-departure"></i>
-                <h1>Critical Point Calculator</h1>
+                <i class="fas fa-plane"></i>
+                <h1>Flight Critical Point Calculator</h1>
+            </div>
+            <div id="authStatus" class="auth-status authenticating">
+                <i class="fas fa-sync-alt fa-spin"></i> Authenticating...
             </div>
         </div>
     </header>
     
     <main class="container">
-        <div class="card">
-            <form id="generateForm" class="input-form">
-                <div class="input-group">
-                    <label for="reference">ERC Reference:</label>
-                    <select id="reference" name="reference" required>
-                        <option value="" disabled selected>Select Chart</option>
-                        <option value="L1">L1</option>
-                        <option value="L2">L2</option>
-                        <option value="L3">L3</option>
-                        <option value="L4">L4</option>
-                        <option value="L5">L5</option>
-                        <option value="L6">L6</option>
-                        <option value="L7">L7</option>
-                        <option value="L8">L8</option>
-                    </select>
+        <div id="loginContainer" class="login-container">
+            <div class="login-card">
+                <h2>Login</h2>
+                <form id="loginForm" class="login-form">
+                    <div class="input-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit"><i class="fas fa-sign-in-alt"></i> Login</button>
+                </form>
+                <div id="loginError" class="error" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i> <span id="loginErrorText"></span>
                 </div>
-                <div class="input-group">
-                    <label for="airport">No. of Airports:</label>
-                    <select id="airport" name="num_airports" required>
-                        <option value="" disabled selected>Select Count</option>
-                        <option value="3">3 (Triangle)</option>
-                        <option value="4">4 (Quadrilateral)</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label for="marks">Marks:</label>
-                    <select id="marks" name="marks" required>
-                        <option value="" disabled selected>Select Marks</option>
-                        <option value="2">2 Marks</option>
-                        <option value="3">3 Marks</option>
-                    </select>
-                </div>
-                <button type="submit"><i class="fas fa-calculator"></i> Generate</button>
-            </form>
+            </div>
         </div>
         
-        <div id="errorMessage" class="error">
-            <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
-        </div>
-        
-        <div id="loader" class="loader">
-            <div class="spinner"></div>
-            <p>Calculating flight details and generating map...</p>
-        </div>
-        
-        <div id="results" class="results">
-            <div class="card flight-details">
-                <h2 class="section-title"><i class="fas fa-scroll"></i> Generated Question</h2>
-                <div id="question" class="question"></div>
-                
-                <h3 class="section-title"><i class="fas fa-cogs"></i> Key Parameters</h3>
-                <div id="parameters" class="params-grid"></div>
+        <div id="mainContent" class="main-content">
+            <div class="card">
+                <form id="generateForm" class="input-form">
+                    <div class="input-group">
+                        <label for="reference">ERC Reference:</label>
+                        <select id="reference" name="reference" required><option value="" disabled selected>Select an option</option><option value="L1">L1</option><option value="L2">L2</option><option value="L3">L3</option><option value="L4">L4</option><option value="L5">L5</option><option value="L6">L6</option><option value="L7">L7</option><option value="L8">L8</option></select>
+                    </div>
+                    <div class="input-group">
+                        <label for="num_airports">Number of Airports:</label>
+                        <select id="num_airports" name="num_airports" required><option value="" disabled selected>Select number</option><option value="3">3</option><option value="4">4</option></select>
+                    </div>
+                    <div class="input-group">
+                        <label for="marks">Marks:</label>
+                        <select id="marks" name="marks" required><option value="" disabled selected>Select marks</option><option value="2">2</option><option value="3">3</option></select>
+                    </div>
+                    <div class="input-group checkbox-group">
+                        <input type="checkbox" id="show_map" name="show_map"><label for="show_map">Show Map</label>
+                    </div>
+                    <button type="submit"><i class="fas fa-calculator"></i> Generate Question</button>
+                    <button type="button" id="toggleJson" class="toggle-json" style="display: none;"><i class="fas fa-code"></i> Show JSON</button>
+                </form>
             </div>
             
-            <div class="card">
-                <h2 class="section-title"><i class="fas fa-map-marked-alt"></i> Interactive Flight Map</h2>
-                <div id="mapContainer" class="map-container">
-                    <!-- Map will be loaded here -->
+            <div id="errorMessage" class="error"><i class="fas fa-exclamation-circle"></i> <span id="errorText"></span></div>
+            <div id="loader" class="loader"><div class="spinner"></div><p>Calculating flight details...</p></div>
+            
+            <div id="results" class="results">
+                <div class="card flight-details">
+                    <h2 class="section-title"><i class="fas fa-info-circle"></i> Flight Details</h2>
+                    <div id="question" class="question"></div>
+                    <h3 class="section-title"><i class="fas fa-clipboard-list"></i> Parameters</h3>
+                    <div id="parameters" class="params-grid"></div>
+                    <div id="jsonSection" class="json-section">
+                        <h3 class="section-title"><i class="fas fa-code"></i> Raw JSON Response</h3>
+                        <div class="json-container">
+                            <button class="copy-btn" onclick="copyJsonToClipboard()"><i class="fas fa-copy"></i> Copy</button>
+                            <pre id="jsonCode" class="json-code"></pre>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-             <div class="card" id="stepsCard" style="display:none;">
-                <h2 class="section-title"><i class="fas fa-shoe-prints"></i> Calculation Steps</h2>
-                <div id="calculationSteps">
-                    <!-- Steps will be loaded here -->
+                <div id="stepsCard" class="card">
+                    <h2 class="section-title"><i class="fas fa-list-ol"></i> Calculation Steps</h2>
+                    <div id="stepsContainer"><div class="steps-placeholder"><i class="fas fa-stream"></i><p>Steps will appear here.</p></div></div>
+                </div>
+                <div id="mapCard" class="card">
+                    <h2 class="section-title"><i class="fas fa-map-marked-alt"></i> Flight Map</h2>
+                    <div id="mapContainer" class="map-container"><div class="map-placeholder"><i class="fas fa-map-marked-alt" style="font-size:48px;"></i><p>Generate a question to view the flight map</p></div></div>
                 </div>
             </div>
         </div>
     </main>
     
-    <footer>
-        <div class="container">
-            <p>© 2025 Flight Critical Point Calculator</p>
-        </div>
-    </footer>
-    <!-- Leaflet JS is not directly used by this HTML, but included if map HTML relies on it being globally available.
-         However, the map is in an iframe, so it should be self-contained. -->
-    <!-- <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script> -->
+    <footer><div class="container"><p>© 2025 Flight Critical Point Calculator</p></div></footer>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
         $(document).ready(function() {
-            let previousMapUrl = null; 
+            let accessToken = null;
+            let previousMapUrl = null;
+            const validCredentials = { username: 'admin', password: 'password123' }; // Hardcoded credentials
+
+            // Handle login form submission
+            $('#loginForm').submit(function(e) {
+                e.preventDefault();
+                const username = $('#username').val().trim();
+                const password = $('#password').val().trim();
+
+                if (username === validCredentials.username && password === validCredentials.password) {
+                    $('#loginContainer').hide();
+                    $('#mainContent').show();
+                    loginAndGetToken(); // Proceed with server-side authentication
+                } else {
+                    showLoginError('Invalid username or password.');
+                }
+            });
+
+            function loginAndGetToken() {
+                updateAuthStatus('authenticating', '<i class="fas fa-sync-alt fa-spin"></i> Authenticating...');
+                $('#generateForm button, #generateForm select').prop('disabled', true);
+
+                $.ajax({
+                    url: '/login',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    success: function(response) {
+                        if (response.access_token) {
+                            accessToken = response.access_token;
+                            console.log("Authentication successful.");
+                            updateAuthStatus('success', '<i class="fas fa-check-circle"></i> Authenticated');
+                            $('#generateForm button, #generateForm select').prop('disabled', false);
+                        } else {
+                            handleAuthError('Invalid token received from server.');
+                        }
+                    },
+                    error: function(xhr) {
+                        const errorMsg = xhr.responseJSON?.msg || 'Could not connect to the server.';
+                        console.error("Authentication failed:", errorMsg);
+                        handleAuthError(errorMsg);
+                    }
+                });
+            }
+
+            function updateAuthStatus(statusClass, message) {
+                $('#authStatus').removeClass('authenticating success failed').addClass(statusClass).html(message);
+            }
+
+            function handleAuthError(message) {
+                updateAuthStatus('failed', '<i class="fas fa-times-circle"></i> Authentication Failed');
+                showError(`<strong>Authentication Failed:</strong> ${message}. This application requires authorization. Please ensure your IP address is on the allowlist and contact the administrator.`);
+                $('#generateForm button, #generateForm select, #generateForm input').prop('disabled', true);
+            }
+
+            function showLoginError(message) {
+                $('#loginErrorText').html(message);
+                $('#loginError').fadeIn(300);
+            }
 
             $('#generateForm').submit(function(e) {
                 e.preventDefault();
+
+                if (!accessToken) {
+                    showError('Not authenticated. Please wait for authentication to complete or reload the page.');
+                    return;
+                }
                 
                 $('#errorMessage').hide();
                 $('#results').hide();
-                $('#stepsCard').hide();
                 $('#loader').show();
-                $('#mapContainer').html('<p style="text-align:center; padding-top:50px;">Map loading...</p>'); // Reset map container
-                $('#calculationSteps').empty();
-
-
-                var reference = $('#reference').val();
-                var num_airports_str = $('#airport').val();
-                var marks_str = $('#marks').val();
-
-                if (!reference) {
-                    showError('Please select a reference chart.');
-                    return;
-                }
-                if (!num_airports_str) {
-                    showError('Please select the number of airports.');
-                    return;
-                }
-                if (!marks_str) {
-                    showError('Please select the number of marks.');
-                    return;
-                }
-
-                var num_airports = parseInt(num_airports_str, 10);
-                var marks = parseInt(marks_str, 10);
+                
+                const requestData = {
+                    reference: $('#reference').val().trim().toUpperCase(),
+                    num_airports: $('#num_airports').val().trim(),
+                    marks: $('#marks').val().trim(),
+                    show_map: $('#show_map').is(':checked')
+                };
 
                 $.ajax({
-                    url: '/generate_question', // Ensure this matches your Flask endpoint
+                    url: '/generate_question',
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ 
-                        reference: reference.trim().toUpperCase(),
-                        num_airports: num_airports,
-                        marks: marks
-                    }),
+                    headers: { 'Authorization': 'Bearer ' + accessToken },
+                    data: JSON.stringify(requestData),
                     success: function(data) {
                         $('#loader').hide();
-                        
-                        if (!data || !data.question_details_raw || !data.geodesic_calculations_and_map) {
-                            showError('Invalid response structure from server. Check console for details.');
-                            console.error("Invalid data structure received:", data);
+                        if (!data || !data.details) {
+                            showError('Invalid or incomplete response from server.');
                             return;
                         }
-                        
-                        const qDetails = data.question_details_raw;
-                        const geoCalculations = data.geodesic_calculations_and_map;
-
-                        console.log("Full Response Data:", data);
-                        console.log("Question Details Raw:", qDetails);
-                        console.log("Geodesic Calculations:", geoCalculations);
-
-                        $('#question').html(`<p>${data.question_text}</p>`);
-                        
-                        const parametersHtml = `
-                            <div class="param-card">
-                                <div class="param-title">Departure</div>
-                                <div class="param-value">${qDetails.departure_name} (${qDetails.departure_code}) <br><small>Lat: ${qDetails.dep_lat.toFixed(4)}, Lon: ${qDetails.dep_lon.toFixed(4)}</small></div>
-                            </div>
-                            <div class="param-card">
-                                <div class="param-title">Arrival</div>
-                                <div class="param-value">${qDetails.arrival_name} (${qDetails.arrival_code}) <br><small>Lat: ${qDetails.arr_lat.toFixed(4)}, Lon: ${qDetails.arr_lon.toFixed(4)}</small></div>
-                            </div>
-                            <div class="param-card">
-                                <div class="param-title">Alternate 1</div>
-                                <div class="param-value">${qDetails.land1_name} (${qDetails.land1_code}) <br><small>Lat: ${qDetails.land1_lat.toFixed(4)}, Lon: ${qDetails.land1_lon.toFixed(4)}</small></div>
-                            </div>
-                            <div class="param-card">
-                                <div class="param-title">Alternate 2</div>
-                                <div class="param-value">${qDetails.land2_name} (${qDetails.land2_code}) <br><small>Lat: ${qDetails.land2_lat.toFixed(4)}, Lon: ${qDetails.land2_lon.toFixed(4)}</small></div>
-                            </div>
-                            <div class="param-card">
-                                <div class="param-title">Cruise Level</div>
-                                <div class="param-value">FL${qDetails.cruise_level}</div>
-                            </div>
-                            <div class="param-card">
-                                <div class="param-title">Normal TAS</div>
-                                <div class="param-value">${qDetails.tas_normal} kt</div>
-                            </div>
-                             <div class="param-card">
-                                <div class="param-title">Normal Wind</div>
-                                <div class="param-value">${qDetails.wind_normal.direction}°T / ${qDetails.wind_normal.speed} kt</div>
-                            </div>
-                            <div class="param-card">
-                                <div class="param-title">Single Engine TAS</div>
-                                <div class="param-value">${qDetails.tas_single_engine} kt</div>
-                            </div>
-                            <div class="param-card">
-                                <div class="param-title">Single Engine Wind</div>
-                                <div class="param-value">${qDetails.wind_single_engine.direction}°T / ${qDetails.wind_single_engine.speed} kt</div>
-                            </div>
-                            <div class="param-card">
-                                <div class="param-title">Configuration Type</div>
-                                <div class="param-value">${qDetails.shape_type}</div>
-                            </div>
-                            <hr style="grid-column: 1 / -1; border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-                            <div class="param-card">
-                                <div class="param-title">Dist P3 to Initial Intersection</div>
-                                <div class="param-value">${geoCalculations.dist_initial_intersect_to_P3_nm !== undefined && geoCalculations.dist_initial_intersect_to_P3_nm !== null ? geoCalculations.dist_initial_intersect_to_P3_nm.toFixed(1) + ' nm' : 'N/A'}</div>
-                            </div>
-                            <div class="param-card">
-                                <div class="param-title">Offset Distance (${geoCalculations.degree_param_used}°)</div>
-                                <div class="param-value">${geoCalculations.offset_distance_nm !== undefined && geoCalculations.offset_distance_nm !== null ? geoCalculations.offset_distance_nm.toFixed(1) + ' nm' : 'N/A'}</div>
-                            </div>
-                            <div class="param-card" style="background-color: var(--success-color); color: white;">
-                                <div class="param-title" style="color: white;">CP Distance from P1 (ANSWER)</div>
-                                <div class="param-value">${geoCalculations.distance_to_P1_nm!== undefined && geoCalculations.distance_to_P1_nm !== null ? geoCalculations.distance_to_P1_nm.toFixed(1) + ' nm' : 'N/A'}</div>
-                            </div>
-                             <hr style="grid-column: 1 / -1; border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-                            <div class="param-card">
-                                <div class="param-title">Dist P3-P4</div>
-                                <div class="param-value">${geoCalculations.distance_p3_p4_nm !== undefined && geoCalculations.distance_p3_p4_nm !== null ? geoCalculations.distance_p3_p4_nm.toFixed(1) + ' nm' : 'N/A'}</div>
-                            </div>
-                             <div class="param-card">
-                                <div class="param-title">Dist CP to P3</div>
-                                <div class="param-value">${geoCalculations.distance_CP_to_P3_nm !== undefined && geoCalculations.distance_CP_to_P3_nm !== null ? geoCalculations.distance_CP_to_P3_nm.toFixed(1) + ' nm' : 'N/A'}</div>
-                            </div>
-                             <div class="param-card">
-                                <div class="param-title">Dist CP to P4</div>
-                                <div class="param-value">${geoCalculations.distance_CP_to_P4_nm !== undefined && geoCalculations.distance_CP_to_P4_nm !== null ? geoCalculations.distance_CP_to_P4_nm.toFixed(1) + ' nm' : 'N/A'}</div>
-                            </div>
-                        `;
-                        $('#parameters').html(parametersHtml);
-                        
-                        if (geoCalculations.map_html) {
-                            if (previousMapUrl) {
-                                URL.revokeObjectURL(previousMapUrl);
-                            }
-                            const mapHtml = geoCalculations.map_html;
-                            const blob = new Blob([mapHtml], {type: 'text/html'});
-                            const url = URL.createObjectURL(blob);
-                            previousMapUrl = url;
-                            
-                            $('#mapContainer').html(`<iframe src="${url}" style="width: 100%; height: 100%; border: none;" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>`);
-                            
-                            $('#mapContainer iframe').on('load', function() {
-                                console.log('Map iframe loaded successfully');
-                            }).on('error', function() {
-                                console.error('Map iframe failed to load');
-                                $('#mapContainer').html('<p style="text-align:center; padding:20px; color:red;">Error loading map iframe.</p>');
-                            });
-                        } else {
-                            $('#mapContainer').html(`<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:15px;"><i class="fas fa-map-slash" style="font-size:48px;color:#ccc;"></i><p>No map data available.</p></div>`);
-                        }
-
-                        // Display calculation steps if available
-                        if (geoCalculations.steps && Array.isArray(geoCalculations.steps) && geoCalculations.steps.length > 0) {
-                            let stepsHtml = '<ol style="padding-left: 20px;">';
-                            geoCalculations.steps.forEach(step => {
-                                stepsHtml += `<li style="margin-bottom: 10px;"><strong>${step.title}:</strong><br>${step.description}</li>`;
-                            });
-                            stepsHtml += '</ol>';
-                            $('#calculationSteps').html(stepsHtml);
-                            $('#stepsCard').fadeIn(300);
-                        }
-                        
-                        $('#results').fadeIn(300);
-                        $('html, body').animate({
-                            scrollTop: $("#results").offset().top - 20 /* Adjust for fixed header if any */
-                        }, 500);
-
+                        displayResults(data);
                     },
-                    error: function(xhr, status, error) {
+                    error: function(xhr) {
                         $('#loader').hide();
-                        let errorMsg = 'An error occurred. Please try again.';
-                        if (xhr.responseJSON && xhr.responseJSON.error) {
-                            errorMsg = xhr.responseJSON.error;
-                        } else if (xhr.responseText) {
-                            try {
-                                // Attempt to extract a more meaningful message from HTML error pages (e.g., Werkzeug)
-                                const SCRIPT_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
-                                const STYLE_REGEX = /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi;
-                                let cleanedText = xhr.responseText.replace(SCRIPT_REGEX, "").replace(STYLE_REGEX, "");
-                                var $temp = $('<div>').html(cleanedText); // Use a div to parse
-                                var h1Text = $temp.find('h1').first().text();
-                                var pText = $temp.find('p').first().text();
-                                if (h1Text) errorMsg = h1Text;
-                                else if (pText && pText.length < 200) errorMsg = pText; // Take first p if not too long
-                            } catch(e){
-                                console.warn("Could not parse error responseText as HTML.", e);
-                            }
-                        } else if (error) {
-                            errorMsg = `Error: ${error}`;
-                        }
+                        const errorMsg = xhr.responseJSON?.msg || xhr.responseJSON?.error || 'Error generating question.';
                         showError(errorMsg);
-                        console.error("AJAX Error Info:", {xhr: xhr, status: status, error: error});
                     }
                 });
             });
             
+            function displayResults(data) {
+                const details = data.details;
+                $('#question').html(`<p>${data.question}</p>`);
+
+                const parametersHtml = `
+                    <div class="param-card"><div class="param-title">Departure</div><div class="param-value">${details.departure_name ?? 'N/A'} (${details.departure ?? 'N/A'})</div></div>
+                    <div class="param-card"><div class="param-title">Arrival</div><div class="param-value">${details.arrival_name ?? 'N/A'} (${details.arrival ?? 'N/A'})</div></div>
+                    <div class="param-card"><div class="param-title">Alternate 1</div><div class="param-value">${details.land1_name ?? 'N/A'} (${details.land1 ?? 'N/A'})</div></div>
+                    <div class="param-card"><div class="param-title">Alternate 2</div><div class="param-value">${details.land2_name ?? 'N/A'} (${details.land2 ?? 'N/A'})</div></div>
+                    <div class="param-card"><div class="param-title">Cruise Level</div><div class="param-value">${details.cruise_level ? `FL${details.cruise_level}` : 'N/A'}</div></div>
+                    <div class="param-card"><div class="param-title">True Airspeed</div><div class="param-value">${details.tas_single_engine ?? 'N/A'} kt</div></div>
+                    <div class="param-card"><div class="param-title">Wind</div><div class="param-value">${details.wind_single_engine?.direction ?? 'N/A'}° / ${details.wind_single_engine?.speed ?? 'N/A'} kt</div></div>
+                    <div class="param-card"><div class="param-title">Ground Speed to Alt 1</div><div class="param-value">${details.gs ? Math.round(details.gs) : 'N/A'} kt</div></div>
+                    <div class="param-card"><div class="param-title">Ground Speed to Alt 2</div><div class="param-value">${details.cs ? Math.round(details.cs) : 'N/A'} kt</div></div>
+                    <div class="param-card"><div class="param-title">Time Difference</div><div class="param-value">${details.time ?? 'N/A'} sec</div></div>
+                    <div class="param-card"><div class="param-title">Distance to Alt 1</div><div class="param-value">${details.geodesic?.distance_to_P3_nm_1 ? Math.round(details.geodesic.distance_to_P3_nm_1) : 'N/A'} nm</div></div>
+                    <div class="param-card"><div class="param-title">Distance to Alt 2</div><div class="param-value">${details.geodesic?.distance_to_P4_nm ? Math.round(details.geodesic.distance_to_P4_nm) : 'N/A'} nm</div></div>
+                    <div class="param-card"><div class="param-title">Answer</div><div class="param-value">${details.Ans ? details.Ans.toFixed(1) : 'N/A'} nm</div></div>
+                    <div class="param-card"><div class="param-title">Wind Vector</div><div class="param-value">${details.geodesic?.distance_to_degree ? Math.round(details.geodesic.distance_to_degree) : 'N/A'} nm</div></div>
+                    <div class="param-card"><div class="param-title">Nil Point Distance to ${details.land1_name ?? 'Alternate'}</div><div class="param-value">${details.geodesic?.distance_to_P3_nm ? Math.round(details.geodesic.distance_to_P3_nm) : 'N/A'} nm</div></div>
+                `;
+                $('#parameters').html(parametersHtml);
+                
+                const stepsContainer = $('#stepsContainer');
+                stepsContainer.empty();
+                if (details.steps && Array.isArray(details.steps) && details.steps.length > 0) {
+                    details.steps.forEach(step => {
+                        stepsContainer.append(`<div class="step-item"><div><strong>${step.title || 'Step'}</strong><p>${step.description || ''}</p><p><em>${step.calculation || ''}</em></p><p><strong>${step.result || ''}</strong></p></div></div>`);
+                    });
+                } else {
+                    stepsContainer.html('<div class="steps-placeholder"><i class="fas fa-info-circle"></i><p>Calculation steps not available.</p></div>');
+                }
+
+                $('#jsonCode').text(JSON.stringify(data, null, 2));
+                $('#toggleJson').show();
+                
+                if ($('#show_map').is(':checked')) {
+                    if (data.map_data && data.details.geodesic_1?.map_html) {
+                        if (previousMapUrl) URL.revokeObjectURL(previousMapUrl);
+                        const blob = new Blob([data.details.geodesic_1.map_html], {type: 'text/html'});
+                        const url = URL.createObjectURL(blob);
+                        previousMapUrl = url;
+                        $('#mapContainer').html(`<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`);
+                    } else {
+                        $('#mapContainer').html('<div class="map-placeholder"><i class="fas fa-map-marked-alt" style="font-size:48px;"></i><p>Map data not available for this scenario.</p></div>');
+                    }
+                    $('#mapCard').show();
+                } else {
+                    $('#mapCard').hide();
+                }
+
+                $('#results').fadeIn(300);
+            }
+
+            $('#toggleJson').click(function() {
+                const $jsonSection = $('#jsonSection');
+                $jsonSection.slideToggle();
+                $(this).html($jsonSection.is(':visible') ? '<i class="fas fa-code"></i> Hide JSON' : '<i class="fas fa-code"></i> Show JSON');
+            });
+
             function showError(message) {
-                $('#errorText').text(message);
+                $('#errorText').html(message);
                 $('#errorMessage').fadeIn(300);
-                $('#loader').hide();
+            }
+            
+            function copyJsonToClipboard() {
+                const jsonText = document.getElementById('jsonCode').textContent;
+                navigator.clipboard.writeText(jsonText).then(() => {
+                    const copyBtn = document.querySelector('.copy-btn');
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    copyBtn.style.backgroundColor = 'var(--success-color)';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalText;
+                        copyBtn.style.backgroundColor = '';
+                    }, 2000);
+                });
             }
         });
     </script>
