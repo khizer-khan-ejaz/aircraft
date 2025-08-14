@@ -22,19 +22,7 @@ from flask_jwt_extended import create_access_token, jwt_required, JWTManager, ge
 logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["*", "http://127.0.0.1:5000"]}})
-cred = credentials.Certificate({
-    "type": "service_account",
-    "project_id": "airplane-49087",
-    "private_key_id": "84e969bd2c76953bb01f12cea7c94c37b338dcc6",
-    "private_key": """-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCdsdQ2iNJsEzH6\nzzK7pLYaTn/u1cTla1RUkCda9AOQdA7DPN7Opyht4m40t7RRrJYozj8Ky4HStfv3\n5dOaL4356P0qIqbMjV34RYZtEe5jyHWosXPQNGaV+pBlL+fuSVSeDFEuYeqiAjqK\n4XkVBpkagpoDKRLHIGRNoAnqKY8X7iD2B/lNvEaQo0F9io/f5lvwJuZQAAA5kPK9\nK4+re0wcZGgbkpdCfmGULvMBfE+i+ExjkuIfX9nh0wIjP5zy//dHl+5tDvl0iOew\n5RcXsAzOGR0UwNohF7cNruBAGpW08OpkTkW658NQwS0mxGy5mn3tMz5DiIihl1y0\nNYdOfW//AgMBAAECggEAHTeaAIKoLgL+cyBZn3+ch9I8jNVJllIk/Uf6KrVkRarj\nI1RPWc2JxZY64gSZYbqO1b+k2YysIIy8Qwlvg7VE4mVDJr/l1KdqnjnPdrzoRM+a\n0ScTtKNI0IfsofrWx4UJqwDQN75HmT29eAbfhsBCtLE29Nfy1TcQrns06xBJJV8c\nd6dt2rfvWgXc4tHmPaiAQtL1RXIUx64jTxvY2OlCASxpzqhxJe100eU0DAq5BQpi\nj6FwvO/OsiMfaZMsYYs5Hoh8IhIbnRXdGQnCYMUsGIEl1rLf3G7n01xLfYXlto0Q\nzXZ+H1vEf7pNRRWmXsLvZF65Xj3kJPmYRg7knvZBQQKBgQDQA8Oynh2iLxldogZ2\nr0rciC8RBaV9iSU7T4H0Zf7fZ7YoZEh95TUXeqPB/eSiQrddkLyOuRnJ4SrrCo0E\nm4ZWN58kwAahX1LlGBY5fKNZlzWbG0R4G8v39CwPYfXlFGtna3F5w2FfIQ4HyPQx\nysMBjiaaz/PoZUQ9+5Ed+dDVvwKBgQDCEm5TcCdighYSmulpTdAR3Nj0hC/wcQwN\ngUQyx12PmXxAQzuj50L4Slmt54Z+SssOTNV0H3R8AwWPf0Zoowt6S8LNJJQZZiuJ\n4LxTL03UBAq/FjesFteCtmBWfCQ4nQFd2t2gsn23/cIoNw3V6nCDaseTgMCAgjL7\n+9ydaKR1wQKBgQCTPFbksy5egd/+epUApQrkFjDaZ5i/xrdnx9tAVoGVOB+jb3gw\nRHDT8aa/xSpz/60yuSP+Ed7DGnH6dDlkrYDkvfITXShUSNiv9+CjSCmHXJRA+Yf5\nTBOPqnEVYk1enJl5Vn+3pCfj4c3AjOjr5Y0qKKgCpHcMY8Ft7gbFpPHAmQKBgQCL\nixsfDa6UCzt5xz97w0KQBX9OWdnqhi6Ha2IxLN7eSRtpTa6NjNS/mR5gh/BR0M+u\niZqVs6RbIwUViAuFY272UZFRVjLTDH7T1e8z1PieMQXVHlGLgKUXTLF6niqhNmts\nI9pmGNGCwYigx+0/2iFqrRWxvssr2/Jy80dPO5W9QQKBgHxVkgeNeD8B9GOFH3mA\nMn05bNqKWFiJU2kBp4rTnzUy+0DiT15NL8SEGyHKRno0Mcm6//DdBTJexomccVvt\nYdVz6J3t67GQCD+FnCZSZvubaygog8/PSNdizRQrIHuLX11Urj9q4BeLA6vuYVRy\npY+B7jrN1sp81hvYQRsDKLbm\n-----END PRIVATE KEY-----\n""",  # ✅ Use triple quotes for multi-line strings
-    "client_email": "firebase-adminsdk-fbsvc@airplane-49087.iam.gserviceaccount.com",
-    "client_id": "107082013090178902883",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40airplane-49087.iam.gserviceaccount.com",
-    "universe_domain": "googleapis.com"
-})
+
 app.config["JWT_SECRET_KEY"] = "a-very-strong-and-secret-key-that-you-should-change" 
 app.config["ALLOWED_IPS"] = ["127.0.0.1", "82.25.126.162","43.204.137.19","147.93.20.219","168.231.123.176"] 
 jwt = JWTManager(app)
