@@ -2,6 +2,7 @@ from venv import logger
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import random
+import ast
 import math
 from math import cos, sin, atan2, sqrt, radians, degrees, asin
 import datetime
@@ -35,8 +36,7 @@ cred = credentials.Certificate({
     "universe_domain": "googleapis.com"
 })
 app.config["JWT_SECRET_KEY"] = "a-very-strong-and-secret-key-that-you-should-change" 
-app.config["ALLOWED_IPS"] = ["168.231.123.176","106.219.164.115","127.0.0.1"]
-
+app.config["ALLOWED_IPS"] = ["127.0.0.1", "82.25.126.162","43.204.137.19","147.93.20.219","168.231.123.176"] 
 jwt = JWTManager(app)
 # 🔹 Step 2: Initialize Firebase App
 firebase_admin.initialize_app(cred)
@@ -65,56 +65,17 @@ logging.basicConfig(level=logging.DEBUG)
 
 def get_client_ip():
     """
-    Enhanced IP detection that:
-    - Correctly handles reverse proxies
-    - Validates IP addresses
-    - Supports logging for debugging
-    - Can check against allowed IP ranges
-    - Handles edge cases more safely
+    Correctly identifies the client's IP address, even behind a reverse proxy.
+    Logs the IP detection process.
     """
-    # List of headers to check for IP (in order of priority)
-    ip_headers = [
-        'X-Forwarded-For',
-        'X-Real-IP',
-        'CF-Connecting-IP',  # Cloudflare
-        'True-Client-IP',    # Akamai and Cloudflare
-        'X-Cluster-Client-IP'
-    ]
-    
-    client_ip = None
-    header_used = None
-    
-    # Check each header in order
-    for header in ip_headers:
-        if header in request.headers:
-            ips = [ip.strip() for ip in request.headers[header].split(',')]
-            # The first IP in the list is the original client
-            if ips and ips[0]:
-                client_ip = ips[0]
-                header_used = header
-                break
-    
-    # Fallback to remote_addr if no header found
-    if client_ip is None:
-        client_ip = request.remote_addr
-        header_used = 'remote_addr'
-    
-    # Validate the IP address format
-    try:
-        from ipaddress import ip_address
-        ip_address(client_ip)  # Raises ValueError if invalid
-    except ValueError:
-        logger.warning(f"[IP Detection] Invalid IP detected: {client_ip}")
-        # You might want to return None or raise an exception here
-    
-    # Log the detection process
-    logger.info(
-        f"[IP Detection] Client IP: {client_ip} | "
-        f"Detected via: {header_used} | "
-        f"Full headers: {dict(request.headers)}"
-    )
-    
-    return client_ip
+    x_forwarded_for = request.headers.get("X-Forwarded-For")
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0].strip()  # first IP is the real client
+        logger.info(f"[IP Detection] X-Forwarded-For found: {x_forwarded_for}, client IP resolved to: {ip}")
+    else:
+        ip = request.remote_addr
+        logger.info(f"[IP Detection] No X-Forwarded-For header. Using request.remote_addr: {ip}")
+    return ip
 # ---- Adding wind effect and ground speed calculation functions from first code ----
 class Navigation:
     def get_track_angle(self, dep, arr, magnetic=True, date=None):
@@ -611,7 +572,7 @@ def get_magnetic_variation( lat, lon, date=None):
         return result.d
 PREDEFINED_2_MARK_QUESTIONS = [
     {
-        "text_template": "Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}. TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
+        "text_template": "Q1.Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}. TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
         "dep_name_text": "Launceston",
         "arr_name_text": "East sale",
         "track_name": "W-218",
@@ -620,7 +581,7 @@ PREDEFINED_2_MARK_QUESTIONS = [
         "reference": "L1",
     },
     {
-        "text_template": "Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}. TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
+        "text_template": "Q2.Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}. TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
         "reference": "L2",
         "dep_name_text": "Griffith",
         "arr_name_text": "Mildura",
@@ -630,7 +591,7 @@ PREDEFINED_2_MARK_QUESTIONS = [
     },
  
     {
-    "text_template": "Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}. TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
+    "text_template": "Q3.Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}. TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
     "dep_name_text": "Inverell",
     "arr_name_text": "Walgett",
     "track_name": "W623",
@@ -643,50 +604,14 @@ PREDEFINED_2_MARK_QUESTIONS = [
     },
 
     {
-        "text_template": "Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}.  TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
+        "text_template": "Q4.Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}.  TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
         "dep_name_text": "Emerald",
         "arr_name_text": "Charleville",
-        "track_name": "W806",
+        "track_name": "W-806",
         "etp_dest1_name_text": "Charleville",
-        "etp_dest2_name_text": "Roma",
+        "etp_dest2_qsname_text": "Roma",
         "reference": "L4",
-    },
-        {
-        "text_template": "Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}.  TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
-        "dep_name_text": "Dubbo ",
-        "arr_name_text": "Bourke ",
-        "track_name": "W540",
-        "etp_dest1_name_text": "Bourke ",
-        "etp_dest2_name_text": "Walgett ",
-        "reference": "L5",
-    },
-       {
-        "text_template": "Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}.  TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
-        "dep_name_text": "Tindal",
-        "arr_name_text": "Tennant Creek",
-        "track_name": "J30",
-        "etp_dest1_name_text": "Tennant Creek",
-        "etp_dest2_name_text": "Hooker Creek",
-        "reference": "L6",
-    },
-    {
-        "text_template": "Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}.  TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
-        "dep_name_text": "Whyalla ",
-        "arr_name_text": "Coober Pedy",
-        "track_name": "W274",
-        "etp_dest1_name_text": "Coober Pedy",
-        "etp_dest2_name_text": "Woomera",
-        "reference": "L7",
-    },
-    {
-        "text_template": "Refer to ERC {reference}.\n\nYou are planning a flight from {dep_name_text} to {arr_name_text} on {track_name}.  TAS is {tas} and W/V {wind_dir_display}M/{wind_speed} kt\n.The question asks for the position of the Critical Point (CP) between {etp_dest1_name_text} and {etp_dest2_name_text} along the {dep_name_text} to {arr_name_text} track ,  as a distance from {dep_name_text}, is closest to -",
-        "dep_name_text": "Newman ",
-        "arr_name_text": "Port Hedland",
-        "track_name": "W125",
-        "etp_dest1_name_text": "Port Hedland",
-        "etp_dest2_name_text": "Paraburdoo",
-        "reference": "L8",
-    },
+    }
 ]
 # Initialize generator
 generator = AirportQuestionGenerator(sample_airports)
@@ -699,14 +624,14 @@ def find(name,airports):
     return None
 # Modify calculate_geodesic function to include ground speed calculations
 @app.route('/generate_question', methods=['POST'])
-@jwt_required()
+@jwt_required() 
 def generate_question_endpoint():
     try:
         # Parse the JSON request data
         data = request.get_json()
         if not data or 'reference' not in data or 'num_airports' not in data or 'marks' not in data:
             return jsonify({'error': 'Missing required parameters: reference, num_airports, and marks are required'}), 400
-
+        
         # Extract parameters
         reference = data['reference']
         num_airports = int(data['num_airports'])
@@ -716,284 +641,281 @@ def generate_question_endpoint():
         # Validate reference
         if not reference.startswith('L') or not reference[1:].isdigit() or int(reference[1:]) < 1 or int(reference[1:]) > 8:
             return jsonify({'error': 'Invalid reference format. Must be L1 through L8'}), 400
-
+        
         # Validate num_airports
         if num_airports not in [3, 4]:
             return jsonify({'error': 'Number of airports must be 3 or 4'}), 400
-
+        
         # Validate marks
         if marks not in [2, 3]:
             return jsonify({'error': 'Marks must be 2 or 3'}), 400
 
         # For 2-mark questions, use predefined questions with retry logic
         if marks == 2:
-            # Filter predefined questions by the provided reference
-            filtered_questions = [q for q in PREDEFINED_2_MARK_QUESTIONS if q['reference'] == reference]
-
-            if not filtered_questions:
-                return jsonify({'error': f'No 2-mark questions found for the reference: {reference}'}), 400
-
-            max_question_attempts = 100000  # Number of times to retry the entire question
+            max_question_attempts = 100000 # Number of times to retry the entire question
             for question_attempt in range(max_question_attempts):
+                
+                    # Select a random predefined question
+                    predefined_question = random.choice(PREDEFINED_2_MARK_QUESTIONS)
+                    
+                    # Find airports in sample_airports
+                    dep = find(predefined_question['dep_name_text'], sample_airports)
+                    arr = find(predefined_question['arr_name_text'], sample_airports)
+                    land1 = find(predefined_question['etp_dest1_name_text'], sample_airports)
+                    land2 = find(predefined_question['etp_dest2_name_text'], sample_airports)
+                    
+                    if not all([dep, arr, land1, land2]):
+                        return jsonify({'error': 'Could not find all airports in sample data'}), 400
+                    
+                    def generate_three_digit_multiple_of_10():
+                        base_number = random.randint(10, 35)
+                        return base_number * 10
 
-                # Select a random predefined question from the filtered list
-                predefined_question = random.choice(filtered_questions)
+                    def generate_wind_strength():
+                        num_multiples = 90 // 5
+                        random_index = random.randint(0, num_multiples - 1)
+                        return (random_index + 1) * 5
+                    
+                    def random_multiple_of_5(min_value, max_value):
+                        lower_bound = min_value if min_value % 5 == 0 else min_value + (5 - min_value % 5)
+                        upper_bound = max_value if max_value % 5 == 0 else max_value - (max_value % 5)
+                        num_multiples = (upper_bound - lower_bound) // 5 + 1
+                        random_index = random.randint(0, num_multiples - 1)
+                        return lower_bound + random_index * 5
+                    
+                    # Initialize parameters
+                    max_attempts = 5
+                    attempt = 0
+                    time = float('inf')
+                    
+                    while attempt < max_attempts and abs(time) >= 60:
+                        # Generate random wind and TAS values
+                        wind_dir = generate_three_digit_multiple_of_10()
+                        wind_speed = generate_wind_strength()
+                        tas = random_multiple_of_5(100, 300)
+                        
+                        # Format wind direction for display (e.g., "270M")
+                        wind_dir_display = f"{wind_dir:03d}M"
+                        
+                        # Format the question text
+                        question_text = predefined_question['text_template'].format(
+                            dep_name_text=predefined_question['dep_name_text'],
+                            arr_name_text=predefined_question['arr_name_text'],
+                            track_name=predefined_question['track_name'],
+                            etp_dest1_name_text=predefined_question['etp_dest1_name_text'],
+                            etp_dest2_name_text=predefined_question['etp_dest2_name_text'],
+                            wind_dir_display=wind_dir_display,
+                            wind_speed=wind_speed,
+                            tas=tas,
+                            reference=predefined_question['reference'],
+                        )
+                        
+                        dep1 = find_airport_by_name(dep.name, reference, airports)
+                        arr1 = find_airport_by_name(arr.name, reference, airports)
+                        land1_map = find_airport_by_name(land1.name, reference, airports)
+                        land2_map = find_airport_by_name(land2.name, reference, airports)
+                        
+                        # Calculate geodesic data
+                        P1 = (dep.lat, dep.long)
+                        P2 = (arr.lat, arr.long)
+                        P3 = (land1.lat, land1.long)
+                        P4 = (land2.lat, land2.long)
+                        P5 = (dep1.lat, dep1.long)
+                        P6 = (arr1.lat, arr1.long)
+                        P7 = (land1_map.lat, land1_map.long)
+                        P8 = (land2_map.lat, land2_map.long)
+                        reference = predefined_question['reference']
+                    
+                        geodesic_results = calculate_geodesic1(P1, P2, P3, P4, tas, wind_speed, wind_dir)
+                        if geodesic_results is None:
+                            print("   -> Calculation failed. Continuing to next plan.")
+                            continue
+                        # Only calculate map geodesic if show_map is True
+                        geodesic_results_1 = None
+                        
+                        
+                        distance_p3 = geodesic_results['distance_to_P3_nm_1']
+                        distance_p4 = geodesic_results['distance_to_P4_nm']
+                        critical_point_data = geodesic_results.get('critical_point')
+                        distance_to_P3_nm = geodesic_results['distance_to_P3_nm']
+                        distance_p1 = geodesic_results['distance_to_P1_nm']
+                        
+                        if isinstance(critical_point_data, (list, tuple)) and len(critical_point_data) == 2:
+                            critical_point_obj = Point(critical_point_data[0], critical_point_data[1])
+                        elif isinstance(critical_point_data, dict) and 'lat' in critical_point_data and 'long' in critical_point_data:
+                            critical_point_obj = Point(critical_point_data['lat'], critical_point_data['long'])
+                        else:
+                            raise ValueError(f"Invalid critical_point_data format: {critical_point_data}")   
+                        
+                        land1_obj = Point(land1.lat, land1.long)
+                        land2_obj = Point(land2.lat, land2.long)        
 
-                # Find airports in sample_airports
-                dep = find(predefined_question['dep_name_text'], sample_airports)
-                arr = find(predefined_question['arr_name_text'], sample_airports)
-                land1 = find(predefined_question['etp_dest1_name_text'], sample_airports)
-                land2 = find(predefined_question['etp_dest2_name_text'], sample_airports)
-
-                if not all([dep, arr, land1, land2]):
-                    return jsonify({'error': 'Could not find all airports in sample data'}), 400
-
-                def generate_three_digit_multiple_of_10():
-                    base_number = random.randint(10, 35)
-                    return base_number * 10
-
-                def generate_wind_strength():
-                    num_multiples = 90 // 5
-                    random_index = random.randint(0, num_multiples - 1)
-                    return (random_index + 1) * 5
-
-                def random_multiple_of_5(min_value, max_value):
-                    lower_bound = min_value if min_value % 5 == 0 else min_value + (5 - min_value % 5)
-                    upper_bound = max_value if max_value % 5 == 0 else max_value - (max_value % 5)
-                    num_multiples = (upper_bound - lower_bound) // 5 + 1
-                    random_index = random.randint(0, num_multiples - 1)
-                    return lower_bound + random_index * 5
-
-                # Initialize parameters
-                max_attempts = 5
-                attempt = 0
-                time = float('inf')
-
-                while attempt < max_attempts and abs(time) >= 60:
-                    # Generate random wind and TAS values
-                    wind_dir = generate_three_digit_multiple_of_10()
-                    wind_speed = generate_wind_strength()
-                    tas = random_multiple_of_5(100, 300)
-
-                    # Format wind direction for display (e.g., "270M")
-                    wind_dir_display = f"{wind_dir:03d}M"
-
-                    # Format the question text
-                    question_text = predefined_question['text_template'].format(
-                        dep_name_text=predefined_question['dep_name_text'],
-                        arr_name_text=predefined_question['arr_name_text'],
-                        track_name=predefined_question['track_name'],
-                        etp_dest1_name_text=predefined_question['etp_dest1_name_text'],
-                        etp_dest2_name_text=predefined_question['etp_dest2_name_text'],
-                        wind_dir_display=wind_dir_display,
-                        wind_speed=wind_speed,
-                        tas=tas,
-                        reference=predefined_question['reference'],
-                    )
-
-                    dep1 = find_airport_by_name(dep.name, reference, airports)
-                    arr1 = find_airport_by_name(arr.name, reference, airports)
-                    land1_map = find_airport_by_name(land1.name, reference, airports)
-                    land2_map = find_airport_by_name(land2.name, reference, airports)
-
-                    # Calculate geodesic data
-                    P1 = (dep.lat, dep.long)
-                    P2 = (arr.lat, arr.long)
-                    P3 = (land1.lat, land1.long)
-                    P4 = (land2.lat, land2.long)
-                    P5 = (dep1.lat, dep1.long)
-                    P6 = (arr1.lat, arr1.long)
-                    P7 = (land1_map.lat, land1_map.long)
-                    P8 = (land2_map.lat, land2_map.long)
-                    question_reference = predefined_question['reference'] # Use a different variable name to avoid conflict
-
-                    geodesic_results = calculate_geodesic1(P1, P2, P3, P4, tas, wind_speed, wind_dir)
-                    if geodesic_results is None:
-                        print("   -> Calculation failed. Continuing to next plan.")
-                        continue
-                    # Only calculate map geodesic if show_map is True
-                    geodesic_results_1 = None
-
-                    distance_p3 = geodesic_results['distance_to_P3_nm_1']
-                    distance_p4 = geodesic_results['distance_to_P4_nm']
-                    critical_point_data = geodesic_results.get('critical_point')
-                    distance_to_P3_nm = geodesic_results['distance_to_P3_nm']
-                    distance_p1 = geodesic_results['distance_to_P1_nm']
-
-                    if isinstance(critical_point_data, (list, tuple)) and len(critical_point_data) == 2:
-                        critical_point_obj = Point(critical_point_data[0], critical_point_data[1])
-                    elif isinstance(critical_point_data, dict) and 'lat' in critical_point_data and 'long' in critical_point_data:
-                        critical_point_obj = Point(critical_point_data['lat'], critical_point_data['long'])
-                    else:
-                        raise ValueError(f"Invalid critical_point_data format: {critical_point_data}")
-
-                    land1_obj = Point(land1.lat, land1.long)
-                    land2_obj = Point(land2.lat, land2.long)
-
-                    nav = Navigation()
-                    mid_house = nav.get_midpoint(critical_point_obj, land1_obj)
-                    mid_land1 = nav.get_midpoint(critical_point_obj, land2_obj)
-                    course_from_home = nav.get_track_angle(mid_house, land2_obj)
-                    course_from_land1 = nav.get_track_angle(mid_land1, land2_obj)
-
-                    def calculate_ground_speed(true_course, tas, wind_dir, wind_speed):
-                        tc_rad = math.radians(true_course)
-                        wd_rad = math.radians(wind_dir)
-                        wca_rad = math.asin((wind_speed / tas) * math.sin(wd_rad - tc_rad))
-                        gs = tas * math.cos(wca_rad) - wind_speed * math.cos(wd_rad - tc_rad)
-                        return gs
-
-                    gs = calculate_ground_speed(course_from_home, tas, wind_dir, wind_speed)
-                    cs = calculate_ground_speed(course_from_land1, tas, wind_dir, wind_speed)
-                    time_p3 = distance_p3 / gs
-                    time_p4 = distance_p4 / cs
-                    time_p3_1 = distance_p3 / gs
-                    time_p4_1 = distance_p4 / cs
-                    time = (time_p3 - time_p4) * 3600  # In seconds
-
-                    attempt += 1
-
-                # If time difference is within 60 seconds, proceed with response
-                if abs(time) < 30:
-                    distance_to_degree = geodesic_results['distance_to_degree']
-
-                    # Add distance between P3 and P4 for 2-mark questions
-                    distance_p3_p4 = geodesic_results['distance_p3_p4']
-                    P3toP4 = haversine_distance(land1.lat, land1.long, land2.lat, land2.long)
-                    question_text = question_text.replace("is -", f" Given that the distance between {land1.name} and {land2.name} is {distance_p3_p4:.1f} nm, is -")
-                    steps = [
-                        {
-                            "step_number": 1,
-                            "title": "Calculate Critical Point Distance",
-                            "description": f"Draw a line from {land1.name} to {land2.name}. Mark the point halfway along the {dep.code}-{arr.code} line. ",
-                            "calculation": f"This distance should be {round(P3toP4)}NM and the mid-point should be {round(P3toP4/2)}NM.",
-
-                        },
-                        {
-                            "step_number": 2,
-                            "title": f"Draw a line at right angles to the {land1.name} - {land2.name} line across the {dep.code}-{arr.code} Track. This point will be the ETP in nil wind",
-                        },
-                        {
-                            "step_number": 3,
-                            "title": f"Calculate the wind vector that will affect the nil wind ETP",
-                            "description": f'''To do this you will need the aircraft's Single Engine TAS ({tas}KTS) and using the calculated nil
-                                wind time interval, multiply this by the wind speed to determine the length of
-                                time the wind affects the flight.
-                                (note: since the question for asked single engine critical point, we will use single engine TAS)
-                                In this case, the TAS is {tas} knots and the distance from the nil wind ETP
-                                to either airport is {round( distance_to_P3_nm)}NM
-                                The nil wind time to either airport is { round (distance_to_P3_nm/tas,2)} hours (Dist./TAS).
-                                The wind is {wind_speed} knots , {round(distance_to_P3_nm/tas,2)}hrs worth is ({round( distance_to_P3_nm/tas,2)} x {wind_speed} = {round(distance_to_degree,2)} NM.)
-                                   '''
-                        },
-                        {
-                            "step_number": 4,
-                            "title": f"Using a protractor draw a wind vector from the nil wind ETP",
-                            "description": f"From the nil wind ETP {round(distance_to_degree)} on wind vector. Now draw a line parallel to the original line that bisects {land1.name} and {land2.name}. Where this line intersects the {dep.code}-{arr.code} track is the actual ETP for continuing to {land1.name} or diverting to {land2.name}. ",
-                            "result": f"In this case the actual ETP lies <span class'large'> {round( distance_p1)}</span> NM from {dep.name}   "
-                        },
-                        {
-                            "step_number": 5,
-                            "title": "Verification: ",
-                            "description": f"We can verify if this answer is correct by calculating the time required to fly to either {land1.name} or {land2.name} and comparing. Ideally, the times should be the same (+-1 minute).\n"
-                            f"Distance from Critical Point to {land1.name}: {round( distance_p3)}NM "
-                            f"Average Track from Critical Point to {land1.name}: {round(course_from_home,2)}M "
-                            f"Groundspeed from Critical Point to {land1.name}: { round(gs ,2)}KTS "
-                            f"Time= Distance/Speed. Therefore = {round(time_p3_1*60,2):.1f}Mins ",
-                        },
-                        {
-                            "step_number": 6,
-                            "title": "Verification: ",
-                            "description": f"We can verify if this answer is correct by calculating the time required to fly to either {land1.name} or {land2.name} and comparing. Ideally, the times should be the same (+-1 minute)."
-                            f"Distance from Critical Point to {land2.name}: {round (distance_p4)}NM "
-                            f"Average Track from Critical Point to {land2.name}: {round (course_from_land1,2)}M "
-                            f"Groundspeed from Critical Point to {land2.name}: {round( cs,2)}KTS "
-                            f"Time= Distance/Speed. Therefore = {round( time_p4_1*60,2):.1f}Mins ",
-                        }
-                    ]
-                    options = {
-                        "A": round(distance_p1),
-                        "B": round(distance_p1 + 27),
-                        "C": round(distance_p1 + 35),
-                        "D": round(distance_p1 + 40),
-                    }
-                    map_json = {
-                        "question_details": {
-                            "departure_name": dep.name,
-                            "arrival_name": arr.name,
-                            "land1_name": land1.name,
-                            "land2_name": land2.name,
-                            "tas_single_engine": tas,
-                            "wind_single_engine": {
-                                "speed": wind_speed,
-                                "direction": wind_dir
+                        nav = Navigation()  
+                        mid_house = nav.get_midpoint(critical_point_obj, land1_obj)
+                        mid_land1 = nav.get_midpoint(critical_point_obj, land2_obj) 
+                        course_from_home = nav.get_track_angle(mid_house, land2_obj)
+                        course_from_land1 = nav.get_track_angle(mid_land1, land2_obj)
+                        
+                        def calculate_ground_speed(true_course, tas, wind_dir, wind_speed):
+                            tc_rad = math.radians(true_course)
+                            wd_rad = math.radians(wind_dir)
+                            wca_rad = math.asin((wind_speed / tas) * math.sin(wd_rad - tc_rad))
+                            gs = tas * math.cos(wca_rad) - wind_speed * math.cos(wd_rad - tc_rad)
+                            return gs
+                        
+                        gs = calculate_ground_speed(course_from_home, tas, wind_dir, wind_speed)
+                        cs = calculate_ground_speed(course_from_land1, tas, wind_dir, wind_speed)
+                        time_p3 = distance_p3 / gs
+                        time_p4 = distance_p4 / cs
+                        time_p3_1 = distance_p3 / gs
+                        time_p4_1 = distance_p4 / cs
+                        time = (time_p3 - time_p4) * 3600  # In seconds
+                        
+                        attempt += 1
+                    
+                    # If time difference is within 60 seconds, proceed with response
+                    if abs(time) < 30:
+                        distance_to_degree = geodesic_results['distance_to_degree']    
+                        
+                        # Add distance between P3 and P4 for 2-mark questions
+                        distance_p3_p4 = geodesic_results['distance_p3_p4']
+                        P3toP4 = haversine_distance(land1.lat, land1.long, land2.lat, land2.long)
+                        question_text = question_text.replace("is -", f" Given that the distance between {land1.name} and {land2.name} is {distance_p3_p4:.1f} nm, is -")
+                        steps = [
+                            {
+                                "step_number": 1,
+                                "title": "Calculate Critical Point Distance",
+                                "description": f"Draw a line from {land1.name} to {land2.name}. Mark the point halfway along the {dep.code}-{arr.code} line. ",
+                                "calculation": f"This distance should be {round(P3toP4)}NM and the mid-point should be {round(P3toP4/2)}NM.",
+                                
+                            },
+                            {
+                                "step_number": 2,
+                                "title": f"Draw a line at right angles to the {land1.name} - {land2.name} line across the {dep.code}-{arr.code} Track. This point will be the ETP in nil wind",
+                            },
+                            {
+                                "step_number": 3,
+                                "title": f"Calculate the wind vector that will affect the nil wind ETP",
+                                "description": f'''To do this you will need the aircraft's Single Engine TAS ({tas}KTS) and using the calculated nil  
+                                    wind time interval, multiply this by the wind speed to determine the length of  
+                                    time the wind affects the flight. 
+                                    (note: since the question for asked single engine critical point, we will use single engine TAS)  
+                                    In this case, the TAS is {tas} knots and the distance from the nil wind ETP 
+                                    to either airport is {round( distance_to_P3_nm)}NM
+                                    The nil wind time to either airport is { round (distance_to_P3_nm/tas,2)} hours (Dist./TAS).  
+                                    The wind is {wind_speed} knots , {round(distance_to_P3_nm/tas,2)}hrs worth is ({round( distance_to_P3_nm/tas,2)} x {wind_speed} = {round(distance_to_degree,2)} NM.) 
+                                       '''
+                            },
+                            {
+                                "step_number": 4,
+                                "title": f"Using a protractor draw a wind vector from the nil wind ETP",
+                                "description": f"From the nil wind ETP {round(distance_to_degree)} on wind vector. Now draw a line parallel to the original line that bisects {land1.name} and {land2.name}. Where this line intersects the {dep.code}-{arr.code} track is the actual ETP for continuing to {land1.name} or diverting to {land2.name}. ",
+                                "result": f"In this case the actual ETP lies <span class'large'> {round( distance_p1)}</span> NM from {dep.name}   "
+                            },
+                            {
+                                "step_number": 5,
+                                "title": "Verification: ",
+                                "description": f"We can verify if this answer is correct by calculating the time required to fly to either {land1.name} or {land2.name} and comparing. Ideally, the times should be the same (+-1 minute).\n"
+                                f"Distance from Critical Point to {land1.name}: {round( distance_p3)}NM "
+                                f"Average Track from Critical Point to {land1.name}: {round(course_from_home,2)}M "
+                                f"Groundspeed from Critical Point to {land1.name}: { round(gs ,2)}KTS "
+                                f"Time= Distance/Speed. Therefore = {round(time_p3_1*60,2):.1f}Mins ",
+                            },
+                            {
+                                "step_number": 6,
+                                "title": "Verification: ",
+                                "description": f"We can verify if this answer is correct by calculating the time required to fly to either {land1.name} or {land2.name} and comparing. Ideally, the times should be the same (+-1 minute)."
+                                f"Distance from Critical Point to {land2.name}: {round (distance_p4)}NM "
+                                f"Average Track from Critical Point to {land2.name}: {round (course_from_land1,2)}M "
+                                f"Groundspeed from Critical Point to {land2.name}: {round( cs,2)}KTS "
+                                f"Time= Distance/Speed. Therefore = {round( time_p4_1*60,2):.1f}Mins ",
                             }
-                        },
-                        "reference": question_reference
-                    }
-                    parameter={
-                        "departure": dep.name,
+                        ]
+                        options = {
+                            "A": round(distance_p1),
+                            "B": round(distance_p1 + 27),
+                            "C": round(distance_p1 - 27),
+                            "D": round(distance_p1 + 40),
+                        }
+                        map_json = {
+                            "question_details": {
+                                "departure_name": dep.name,
+                                "arrival_name": arr.name,
+                                "land1_name": land1.name,
+                                "land2_name": land2.name,
+                                "tas_single_engine": tas,
+                                "wind_single_engine": {
+                                    "speed": wind_speed,
+                                    "direction": wind_dir
+                                }
+                            },
+                            "reference": reference
+            }
+                        parameter={
+                            "departure": dep.name,
                         "departure_code":dep.code,
                         "arrival": arr.name,
                         "departure_code":arr.code,
                         "alternate1": land1.name,
-                        "alternate1_code": land1.code,
-                        "alternate2": land2.name,
-                        "alternate2_code": land2.code,
-                        "true_airspeed": tas,
-                        "wind": f"{wind_speed}/{wind_dir}",
-                        'ground_speed_to_alt_1': round(gs,2),
-                        'ground_speed_to_alt_2': round(cs,2),
-                        'time_difference': int(time),
-                    }
-                    print(f"Question Attempt : {question_text}")
-                    response_data = {
-                        'question': question_text,
-                        'show_map': show_map,
-                        'details': {
-                            'departure': dep.code,
-                            'departure_name': dep.name,
-                            'arrival': arr.code,
-                            'arrival_name': arr.name,
-                            'land1': land1.code,
-                            'land1_name': land1.name,
-                            'land2': land2.code,
-                            'land2_name': land2.name,
-                            'cruise_level': "FL180",  # Default for 2-mark questions
-                            'tas_normal': tas,
-                            'tas_single_engine': tas,
-                            'wind_normal': {'direction': wind_dir, 'speed': wind_speed},
-                            'wind_single_engine': {'direction': wind_dir, 'speed': wind_speed},
-                            'shape_type': "ETP",  # Default for 2-mark questions
-                            'reference': question_reference,
-                            'geodesic': geodesic_results,
-                            'gs': gs,
-                            'cs': cs,
-                            'time1': time_p3,
-                            'time2': time_p4,
-                            'time': int(time),
-                            'steps': steps,
-                            'Ans':round( distance_p1),
-                            'options':options,
-                            'map_json':map_json,
-                            'parameter':parameter
+                    "alternate1_code": land1.code,
+                    "alternate2": land2.name,
+                    "alternate2_code": land2.code,
+                    "true_airspeed": tas,
+                    "wind": f"{wind_speed}/{wind_dir}",
+                    'ground_speed_to_alt_1': round(gs,2),
+                    'ground_speed_to_alt_2': round(cs,2),
+                    'time_difference': int(time),
+
                         }
-                    }
-                    if show_map:
-                        geodesic_results_1 = calculate_geodesic(P5, P6, P7, P8, tas, wind_speed, wind_dir, chart_id=question_reference)
-                    # Add map data only if requested
-                    if show_map and geodesic_results_1:
-                        response_data['details']['geodesic_1'] = geodesic_results_1
-                        response_data['map_data'] = {
-                            'chart_reference': question_reference,
-                            'airports': {
-                                'departure': {'code': dep1.code, 'name': dep1.name, 'lat': dep1.lat, 'long': dep1.long},
-                                'arrival': {'code': arr1.code, 'name': arr1.name, 'lat': arr1.lat, 'long': arr1.long},
-                                'land1': {'code': land1_map.code, 'name': land1_map.name, 'lat': land1_map.lat, 'long': land1_map.long},
-                                'land2': {'code': land2_map.code, 'name': land2_map.name, 'lat': land2_map.lat, 'long': land2_map.long}
+                        response_data = {
+                            'question': question_text,
+                            'show_map': show_map,
+                            'details': {
+                                'departure': dep.code,
+                                'departure_name': dep.name,
+                                'arrival': arr.code,
+                                'arrival_name': arr.name,
+                                'land1': land1.code,
+                                'land1_name': land1.name,
+                                'land2': land2.code,
+                                'land2_name': land2.name,
+                                'cruise_level': "FL180",  # Default for 2-mark questions
+                                'tas_normal': tas,
+                                'tas_single_engine': tas,
+                                'wind_normal': {'direction': wind_dir, 'speed': wind_speed},
+                                'wind_single_engine': {'direction': wind_dir, 'speed': wind_speed},
+                                'shape_type': "ETP",  # Default for 2-mark questions
+                                'reference': reference,
+                                'geodesic': geodesic_results,
+                                'gs': gs,
+                                'cs': cs,
+                                'time1': time_p3,
+                                'time2': time_p4,
+                                'time': int(time),
+                                'steps': steps,
+                                'Ans':round( distance_p1),
+                                'options':options,
+                                'map_json':map_json,
+                                'parameter':parameter
+                                
                             }
                         }
-                    return jsonify(response_data)
+                        if show_map:
+                            geodesic_results_1 = calculate_geodesic(P5, P6, P7, P8, tas, wind_speed, wind_dir, chart_id=reference)
+                        # Add map data only if requested
+                        if show_map and geodesic_results_1:
+                            response_data['details']['geodesic_1'] = geodesic_results_1
+                            response_data['map_data'] = {
+                                'chart_reference': reference,
+                                'airports': {
+                                    'departure': {'code': dep1.code, 'name': dep1.name, 'lat': dep1.lat, 'long': dep1.long},
+                                    'arrival': {'code': arr1.code, 'name': arr1.name, 'lat': arr1.lat, 'long': arr1.long},
+                                    'land1': {'code': land1_map.code, 'name': land1_map.name, 'lat': land1_map.lat, 'long': land1_map.long},
+                                    'land2': {'code': land2_map.code, 'name': land2_map.name, 'lat': land2_map.lat, 'long': land2_map.long}
+                                }
+                            }
+                        
+                        return jsonify(response_data)
         else:  # 3-mark questions - keep existing logic
             # Generate the base question
             question = generator.generate_question_with_reference(reference, num_airports)
@@ -1095,6 +1017,7 @@ def generate_question_endpoint():
                 "title": "Calculate Critical Point Distance",
                 "description": f"Draw a line from {land1.name} to {land2.name}. Mark the point halfway along the {dep.code}-{arr.code} line. ",
                 "calculation": f"This distance should be {round(P3toP4,2)}NM and the mid-point should be {round(  P3toP4/2,2)}NM.",
+                "result": " nautical miles"
             },
             {
                 "step_number": 2,
@@ -1123,16 +1046,16 @@ def generate_question_endpoint():
                 "step_number": 4,
                 "title": f"Using a protractor draw a wind vector from the nil wind ETP",
                 "description": f"From the nil wind ETP {round( degreesdistance,2)} on wind vector.Now draw a line  parallel to the original line that bisects {land1.name} and {land2.name} .Where this line  intersects the {dep.code}-{arr.code} track is the actual ETP for continuing to {land1.name}  or  diverting to {land2.name}. ",
-                "result": f"In this case the actual ETP lies <span class='large'>{round(distance_p1)} NM</span>  from {dep.name}, or <span class='large'> {round( distancefrom2)} NM</span>  from {arr.name}.  "
+                "result": f"In this case the actual ETP lies <span class='large'>{round(distance_p1,2)}</span> NM from {dep.name}, or <span class='large'> {round( distancefrom2,2)}</span> NM from {arr.name}.  "
             },
             {
                 "step_number": 5,
                 "title": "Verification: ",
                 "description": f"We can verify if this answer is correct by calculating the time required to fly to either {land1.name} or {land2.name} and comparing. Ideally, the times should be the same (+-1 minute).\n"
-                f"Distance from Critical Point to {land1.name}: {round( distance_p3,2)} NM "
-                f"Average Track from Critical Point to {land1.name}: {round( course_from_home,2)} M "
-                f"Groundspeed from Critical Point to {land1.name}: {round( gs,2)} KTS "
-                f"Time= Distance/Speed. Therefore =  {round( time_p3_1,2)} Mins ",
+                f"Distance from Critical Point to {land1.name}: {round( distance_p3,2)}NM "
+                f"Average Track from Critical Point to {land1.name}: {round( course_from_home,2)}M "
+                f"Groundspeed from Critical Point to {land1.name}: {round( gs,2)}KTS "
+                f"Time= Distance/Speed. Therefore =  {round( time_p3_1,2)}Mins ",
                 
 
                 
@@ -1141,10 +1064,10 @@ def generate_question_endpoint():
                 "step_number": 6,
                 "title": f"Verification: ",
                 "description": f"We can verify if this answer is correct by calculating the time required to fly to either {land1.name} or {land2.name} and comparing. Ideally, the times should be the same (+-1 minute)."
-                f"Distance from Critical Point to {land2.name}: {distance_p4} NM "
-                f"Average Track from Critical Point to {land2.name}: {round (course_from_land1,2)} M "
-                f"Groundspeed from Critical Point to {land2.name}: {round( cs,2)} KTS "
-                f"Time= Distance/Speed. Therefore =  {round( time_p4_1,2)} Mins ",
+                f"Distance from Critical Point to {land2.name}: {distance_p4}NM "
+                f"Average Track from Critical Point to {land2.name}: {round (course_from_land1,2)}M "
+                f"Groundspeed from Critical Point to {land2.name}: {round( cs,2)}KTS "
+                f"Time= Distance/Speed. Therefore =  {round( time_p4_1,2)}Mins ",
             }
         ]
 
@@ -1153,7 +1076,7 @@ def generate_question_endpoint():
             options = {
                         "A": round(cp_distance),
                         "B": round(cp_distance + 27),
-                        "C": round(cp_distance + 37),
+                        "C": round(cp_distance - 27),
                         "D": round(cp_distance + 40),
                     }
             parameter={
@@ -1323,13 +1246,565 @@ def home():
             '/question': 'GET - Display question and map interface'
         }
     })
+def calculate_etp(distance, gs_return, gs_outbound):
+    """
+    Calculate Equi-Time Point (ETP)
+    wind_type: 'headwind' or 'tailwind'
+    Returns ETP distance and time to ETP
+    """
+    
+    
+    # Calculate ETP distance
+    etp_distance = (distance * gs_return) / (gs_outbound + gs_return)
+    
+    # Calculate time to ETP (in hours)
+    time_to_etp = etp_distance / gs_outbound
+    
+    return round(etp_distance, 2), round(time_to_etp * 60, 2)  # Convert time to minutes
+
+def generate_marks2_question():
+    # Random parameters
+    tas        = random.randint(20, 50) * 5       # 20..50 → 100..250 step 5
+    tas_single = random.randint(20, 50) * 5
+    distance   = random.randint(20, 50) * 10      # 20..50 → 200..500 step 10
+    wind_speed = random.randint(2, 10) * 5        # 2..10  → 10..50  step 5
+
+      # Wind speed in knots
+    wind_type = random.choice(['headwind', 'tailwind'])
+    engine=random.choice(['single','normal'])
+    wind_reverse = 'tailwind' if wind_type == 'headwind' else 'headwind'
+    if engine=='single':
+        if wind_type == 'headwind':
+            gs_outbound = tas - wind_speed
+            gs_return = tas_single + wind_speed
+            gs_outbound_wrong = tas - wind_speed
+            gs_return_wrong = tas_single + wind_speed
+            gs_return_falut=tas+wind_speed
+        else:
+            gs_outbound = tas + wind_speed
+            gs_return = tas_single - wind_speed
+            gs_outbound_wrong = tas_single + wind_speed
+            gs_return_wrong = tas - wind_speed
+            gs_return_falut=tas-wind_speed
+    else:
+        if wind_type == 'headwind':
+            gs_outbound = tas - wind_speed
+            gs_return = tas + wind_speed
+            gs_outbound_wrong = tas_single - wind_speed
+            gs_return_wrong = tas_single + wind_speed
+            gs_return_falut=tas_single+wind_speed
+        else:
+            gs_outbound = tas + wind_speed
+            gs_return = tas - wind_speed
+            
+            gs_outbound_wrong = tas_single - wind_speed
+            gs_return_wrong = tas_single + wind_speed
+            gs_return_falut=tas_single+wind_speed
+    # Calculate ETP
+
+    etp_distance, time_to_etp = calculate_etp(distance, gs_return, gs_outbound)
+    etp_distance_wrong, time_to_etp_wrong = calculate_etp(distance, gs_return_falut, gs_outbound)
+    etp_distance_wrong_1, time_to_etp_wrong_1 = calculate_etp(distance, gs_return_wrong, gs_outbound_wrong)
+    etp_distance_wrong_2=etp_distance_wrong_1+10
+    time_to_etp_wrong_2=time_to_etp_wrong_1+10
+    options = {
+                            "A": f'The time of etp {time_to_etp}min and the distance to the PNR is {etp_distance}nm',
+                            "B": f'The time of etp {time_to_etp_wrong}min and the distance to the PNR is {etp_distance_wrong}nm',
+                            "C": f'The time of etp {time_to_etp_wrong_1}min and the distance to the PNR is {etp_distance_wrong_1}nm',
+                            "D": f'The time of etp {time_to_etp_wrong_2}min and the distance to the PNR is {etp_distance_wrong_2}nm',
+                        }
+    # Format the question
+    question = (
+    f"From A to B is {distance} nm, Normal engine TAS: {tas} kts, "
+    f"Single engine TAS: {tas_single} kts, Forecast {wind_type.capitalize()} outbound: {wind_speed} kts, "
+    f"Normal operation TAS: {tas} kts. Find the ETP from A (NM), answer to the nearest whole NM for {engine} engine."
+)       
+    dgs=distance*gs_return
+    add=gs_return+gs_outbound
+    solution={
+    "formula": "ETP distance from A = (Total distance × GS_home) / (GS_home + GS_outbound)",
+    "substitution": f"({distance} × {gs_return}) / ({gs_return }+ {gs_outbound})",
+    "calculation": f"{dgs} / {add} = {etp_distance} nm",
+    
+
+    }
+    
+    return {
+        'question': question,
+        'parameters': {
+            'tas': tas,
+            'distance': distance,
+            'wind_speed': wind_speed,
+            'wind_type': wind_type,
+            'wind_reverse':wind_reverse,
+            'options':options,
+            'solution':solution,
+            'time':time_to_etp
+        },
+        'answer': {
+            'etp_distance': etp_distance,
+            'units': {  
+                'distance': 'nautical miles',
+                'time':time_to_etp
+            }
+        },
+        'marks': 2
+    }
+
+def calculate_groundspeed(tas, course_deg, wind_speed, wind_dir_deg):
+    """
+    Calculate groundspeed given TAS, course, wind speed, and wind direction.
+    Uses vector triangle method.
+    """
+    # Convert angles to radians
+    course_rad = math.radians(course_deg)
+    wind_dir_rad = math.radians(wind_dir_deg)
+    
+    # Wind direction relative to course
+    theta = wind_dir_rad - course_rad
+    
+    # Ground speed formula
+    gs = math.sqrt(tas**2 + wind_speed**2 - 2 * tas * wind_speed * math.cos(theta))
+    return round(gs, 2)
+
+def generate_marks3_question():
+    import random
+
+    tas = random.randrange(100, 251, 5)
+    tas_single = random.randrange(100, 251, 5)
+  # True Airspeed in knots
+    distance = random.randrange(200, 501, 5)  # Total distance nm
+    import random
+
+    course_outbound = random.choice(list(range(90, 121)) + list(range(270, 361)))
+  # Degrees
+    wind_speed = random.randrange(10, 51, 10) # Wind speed knots
+    wind_dir = random.randint(0, 359)  # Wind direction degrees
+
+    # Outbound GS
+    gs_outbound = calculate_groundspeed(tas, course_outbound, wind_speed, wind_dir)
+    gs_outbound_wrong = calculate_groundspeed(tas_single, course_outbound, wind_speed, wind_dir)
+    
+    # Homebound GS (reverse course)
+    home_course = (course_outbound + 180) % 360
+    gs_homebound = calculate_groundspeed(tas, home_course, wind_speed, wind_dir)
+    gs_homebound_wrong = calculate_groundspeed(tas_single, home_course, wind_speed, wind_dir)
+    
+    # Calculate ETP
+    etp_distance = (distance * gs_homebound) / (gs_outbound + gs_homebound)
+    time_to_etp = round((etp_distance / gs_outbound)*60)
+    etp_distance_wrong = (distance * gs_homebound_wrong) / (gs_outbound_wrong + gs_homebound_wrong)
+    time_to_etp_wrong = round((etp_distance / gs_outbound_wrong*60))
+    
+    question = (
+        f"A to B {distance} eastbound"
+        f"Normal operation TAS= {tas} "
+        f"Asymmetric {tas_single} TAS kt"
+        f"- Outbound course: {course_outbound}°\n"
+        f"Wind {wind_dir}M/{wind_speed} kt"
+        f"FIND (a) ETP from A (NM). (b) Time from A to the ETP (min). Nearest whole NM and minute . "
+    
+    )
+    options = {
+                            "A": f'The time of etp {time_to_etp}min and the distance to the Etp is {etp_distance}nm',
+                            "B": f'The time of etp {time_to_etp_wrong}min and the distance to the Etp is {etp_distance_wrong}nm',
+                            "C": f'The time of etp {time_to_etp}min and the distance to the Etp is {etp_distance_wrong}nm',
+                            "D": f'The time of etp {time_to_etp_wrong}min and the distance to the Etp is {etp_distance}nm',
+                        }
+   
+    return {
+        'question': question,
+        'parameters': {
+            'tas': tas,
+            'distance': distance,
+            'course_outbound': course_outbound,
+            'wind_speed': wind_speed,
+            'wind_direction': wind_dir,
+            'options':options
+        },
+        'answer': {
+            'gs_outbound': gs_outbound,
+            'gs_homebound': gs_homebound,
+            'etp_distance': round(etp_distance, 2),
+            'time_to_etp': round(time_to_etp * 60, 2),
+            'units': {
+                'groundspeed': 'knots',
+                'distance': 'nautical miles',
+                'time': 'minutes'
+            }
+        },
+        'marks': 3
+    }
+
+
+@app.route('/etpwitout')
+def index():
+    return render_template('question.html')
+
+@app.route('/api/question', methods=['POST'])
+def get_question():
+    """
+    POST endpoint that returns different question types based on marks parameter
+    Expected JSON payload: {"marks": 2} or {"marks": 3}
+    """
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        
+        # Validate that marks is provided
+        if not data or 'marks' not in data:
+            return jsonify({
+                'error': 'Missing "marks" parameter in request body',
+                'example': '{"marks": 2} or {"marks": 3}'
+            }), 400
+        
+        marks = data['marks']
+        
+        # Generate question based on marks
+        if marks == 2:
+            question_data = generate_marks2_question()
+            return jsonify({
+                'status': 'success',
+                'question_type': '2 marks',
+                'data': question_data
+            })
+        elif marks == 3:
+            question_data = generate_marks3_question()
+            return jsonify({
+                'status': 'success',
+                'question_type': '3 marks',
+                'data': question_data
+            })
+        else:
+            return jsonify({
+                'error': 'Invalid marks value. Only 2 and 3 marks questions are supported.',
+                'valid_marks': [2, 3]
+            }), 400
+            
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to process request',
+            'message': str(e)
+        }), 500
+
+# Optional: Keep the original GET endpoints for backward compatibility
+@app.route('/api/question/marks2', methods=['GET'])
+def get_marks2_question():
+    question_data = generate_marks2_question()
+    return jsonify(question_data)
+
+@app.route('/api/question/marks3', methods=['GET'])
+def get_marks3_question():
+    question_data = generate_marks3_question()
+    return jsonify(question_data)
 
 @app.route('/question')
 def display_question():
-    return render_template('question.html')
+    return render_template('question1.html')
 
 # Add a new endpoint to calculate wind effects and ground speed
+def load_airport_data(filepath="data.txt"):
+    with open(filepath, "r") as f:
+        content = f.read()
+    return ast.literal_eval(content)
 
+AIRPORT_DATA = load_airport_data()
+
+# ---------------------- PRESSURE ALTITUDE (1 mark) ----------------------
+TEMPLATES_PRESSURE_1MARK = [
+    "Calculate the pressure height for an aerodrome with a strip elevation of {elevation} ft when the QNH is {qnh} hPa. Round your answer to the nearest 50 feet.",
+    "An airfield's elevation is {elevation} ft and the QNH at the time is {qnh} hPa. What is the pressure altitude? (Give your answer rounded to the nearest 50 ft.)",
+    "The strip elevation is {elevation} feet. If the QNH reported is {qnh} hPa, determine the pressure altitude to the nearest 50 feet.",
+    "What is the pressure altitude if the runway elevation is {elevation} ft and local QNH is {qnh} hPa? (Round off your answer to the nearest 50 feet.)",
+    "Find the pressure height for a location where the elevation is {elevation} ft and the QNH is {qnh} hPa. (Round answer to nearest 50 ft.)"
+]
+
+def generate_pressure_params():
+    elevation = random.choice(range(100, 3001, 10))
+    qnh = random.choice(range(990, 1036, 10))
+    return elevation, qnh
+
+def calculate_pressure_height(elevation, qnh):
+    raw = elevation + (1013 - qnh) * 30
+    rounded = int(50 * round(raw / 50))
+    return rounded, raw
+
+def generate_pressure_mcq(correct_answer, raw_answer, elevation, qnh):
+    calc_mistake = elevation + (1013 + qnh) * 30
+    calc_mistake = int(50 * round(calc_mistake / 50))
+    rounding_mistake = int(raw_answer)
+    random_wrong = correct_answer + random.choice([-100, -50, 50, 100])
+    options = [correct_answer, calc_mistake, rounding_mistake, random_wrong]
+    options = list(dict.fromkeys(options))
+    while len(options) < 4:
+        options.append(correct_answer + random.choice([-150, 150]))
+    random.shuffle(options)
+    return options
+
+def get_pressure_altitude_question():
+    elevation, qnh = generate_pressure_params()
+    correct, raw_answer = calculate_pressure_height(elevation, qnh)
+    text = random.choice(TEMPLATES_PRESSURE_1MARK).format(elevation=elevation, qnh=qnh)
+    display_type = random.choice(['mcq', 'typein'])
+    options = generate_pressure_mcq(correct, raw_answer, elevation, qnh) if display_type == 'mcq' else []
+    return {
+        'marks': 1,
+        'label': '1 Mark – Pressure Altitude',
+        'category': 'pressure',
+        'text': text,
+        'type': display_type,
+        'options': options,
+        'correct': correct,
+        'elev': elevation,
+        'qnh': qnh
+    }
+
+# ---------------------- DENSITY ALTITUDE (1 mark) ----------------------
+DENSITY_1MARK_TEMPLATES = [
+    "Find the ISA deviation where the pressure height is {pressure_height} ft and the outside air temperature (OAT) is {oat} °C.",
+    "Calculate the ISA deviation if the pressure altitude is {pressure_height} ft and the OAT is {oat} °C.",
+    "Given a pressure height of {pressure_height} feet and OAT of {oat} °C, determine the ISA deviation.",
+    "What is the ISA deviation when the pressure height is {pressure_height} ft with an outside air temperature of {oat} °C?",
+    "Determine the ISA deviation for a location with pressure altitude {pressure_height} ft and OAT {oat} °C."
+]
+
+def generate_density_question_params():
+    pressure_height = random.choice(range(500, 10001, 500))
+    oat = random.choice(range(-20, 36))
+    return pressure_height, oat
+
+def calculate_isa_deviation(pressure_height, oat):
+    thousands = pressure_height / 1000
+    isa_temp = 15 - 2 * thousands
+    isa_dev = oat - isa_temp
+    return round(isa_temp, 1), int(round(isa_dev))
+
+def generate_density_mcq(correct_answer):
+    wrong_near = correct_answer + random.choice([-2, -1, 1, 2])
+    sign_flip = -correct_answer
+    off_by = correct_answer + random.choice([-3, 3])
+    options = [correct_answer, wrong_near, sign_flip, off_by]
+    options = list(dict.fromkeys(options))
+    while len(options) < 4:
+        options.append(correct_answer + random.choice([-4, 4]))
+    random.shuffle(options)
+    return options
+
+def get_density_altitude_question():
+    ph, oat = generate_density_question_params()
+    isa_temp, correct = calculate_isa_deviation(ph, oat)
+    text = random.choice(DENSITY_1MARK_TEMPLATES).format(pressure_height=ph, oat=oat)
+    display_type = random.choice(['mcq', 'typein'])
+    options = generate_density_mcq(correct) if display_type == 'mcq' else []
+    return {
+        'marks': 1,
+        'label': '1 Mark – Density Altitude',
+        'category': 'density',
+        'text': text,
+        'type': display_type,
+        'options': options,
+        'correct': correct,
+        'pressure_height': ph,
+        'oat': oat,
+        'isa_temp': isa_temp
+    }
+
+# ---------------------- PRESSURE ALTITUDE (2 mark) ----------------------
+PRESSURE_2MARK_TEMPLATES = [
+    "On a particular day, the QNH at {airport} Airport was {qnh} hPa. Using the airport’s elevation, calculate the Pressure Height for that day. Round your final answer to the nearest 50 ft.",
+    "The QNH recorded at {airport} Airport was {qnh} hPa. Find the pressure altitude using the elevation of the airport. Provide your answer rounded to the nearest 50 feet.",
+    "Given that the QNH at {airport} Airport is {qnh} hPa and knowing the airport's elevation, calculate the pressure height. Round your answer to the nearest 50 ft.",
+    "At {airport} Airport, the QNH was {qnh} hPa. Using the elevation from your reference, find the pressure altitude and round it to the nearest 50 feet.",
+    "Calculate the pressure height for {airport} Airport with a QNH of {qnh} hPa. Use the known elevation of the airport and round the final result to the nearest 50 ft."
+]
+
+def generate_mcq_options_2mark(correct_answer, calc_value, elevation, qnh):
+    calc_mistake_val = elevation + (1013 + qnh) * 30
+    calc_mistake_val = int(50 * round(calc_mistake_val / 50))
+    rounding_mistake = int(calc_value + elevation)
+    random_wrong = correct_answer + random.choice([-100, -50, 50, 100])
+    options = [correct_answer, calc_mistake_val, rounding_mistake, random_wrong]
+    options = list(dict.fromkeys(options))
+    while len(options) < 4:
+        options.append(correct_answer + random.choice([-150, 150]))
+    random.shuffle(options)
+    return options
+
+def generate_pressure_2mark_question():
+    airport = random.choice(list(AIRPORT_DATA.keys()))
+    elevation = AIRPORT_DATA[airport]
+    qnh = random.choice(range(990, 1036, 10))
+    calc_value = (1013 - qnh) * 30
+    raw_answer = elevation + calc_value
+    rounded_answer = int(50 * round(raw_answer / 50))
+    question_text = random.choice(PRESSURE_2MARK_TEMPLATES).format(airport=airport, qnh=qnh)
+    q_type = random.choice(['mcq', 'typein'])
+    options = generate_mcq_options_2mark(rounded_answer, calc_value, elevation, qnh) if q_type == 'mcq' else []
+    return {
+        'marks': 2,
+        'label': '2 Marks – Pressure Altitude',
+        'category': 'pressure_2mark',
+        'text': question_text,
+        'type': q_type,
+        'options': options,
+        'correct': rounded_answer,
+        'elev': elevation,
+        'qnh': qnh,
+        'airport': airport,
+        'calculation_value': calc_value
+    }
+
+# ---------------------- DENSITY ALTITUDE (2 mark) ----------------------
+def generate_density_2mark_mcq(correct_answer):
+    wrong_1 = correct_answer + random.choice([-100, -50, 50, 100])
+    wrong_2 = correct_answer + random.choice([-150, 150])
+    wrong_3 = correct_answer + random.choice([-200, 200])
+    options = [correct_answer, wrong_1, wrong_2, wrong_3]
+    options = list(dict.fromkeys(options))
+    while len(options) < 4:
+        options.append(correct_answer + random.choice([-250, 250]))
+    random.shuffle(options)
+    return options
+
+def generate_density_2mark_question():
+    airport = random.choice(list(AIRPORT_DATA.keys()))
+    elevation = AIRPORT_DATA[airport]
+    qnh = random.choice(range(990, 1036, 10))
+    oat = random.choice(range(-20, 36))
+    ph_raw = elevation + (1013 - qnh) * 30
+    ph_rounded = int(50 * round(ph_raw / 50))
+    ph_thousands = ph_rounded / 1000
+    isa_temp = 15 - 2 * ph_thousands
+    isa_dev = oat - isa_temp
+    temp_effect = isa_dev * 120
+    dh_raw = ph_rounded + temp_effect
+    dh_rounded = int(50 * round(dh_raw / 50))
+
+    DENSITY_2MARK_TEMPLATES = [
+        "At {airport}, the QNH is {qnh} hPa and the OAT is {oat} °C. Using the elevation of the airport, calculate the Density Altitude. Round your answer to the nearest 50 ft.",
+        "Given the QNH of {qnh} hPa and OAT of {oat} °C at {airport}, find the Density Altitude using the airport's elevation. Round your final answer to nearest 50 feet.",
+        "Calculate the Density Altitude for {airport} with QNH {qnh} hPa and OAT {oat} °C. Use the known elevation and round to nearest 50 ft.",
+        "Given OAT {oat} °C and QNH {qnh} hPa at {airport}, determine the Density Altitude by using airport elevation. Round your answer to nearest 50 feet.",
+        "At {airport} Airport, with QNH {qnh} hPa and OAT {oat} °C, compute the Density Altitude. Use elevation and round result to nearest 50 ft."
+    ]
+    question_text = random.choice(DENSITY_2MARK_TEMPLATES).format(
+        airport=airport, qnh=qnh, oat=oat
+    )
+    q_type = random.choice(['mcq', 'typein'])
+    options = generate_density_2mark_mcq(dh_rounded) if q_type == 'mcq' else []
+    return {
+        'marks': 2,
+        'label': '2 Marks – Density Altitude',
+        'category': 'density_2mark',
+        'text': question_text,
+        'type': q_type,
+        'options': options,
+        'correct': dh_rounded,
+        'elev': elevation,
+        'qnh': qnh,
+        'oat': oat,
+        'airport': airport,
+        'ph_rounded': ph_rounded,
+        'isa_temp': round(isa_temp, 1),
+        'isa_dev': round(isa_dev, 1),
+        'temp_effect': int(round(temp_effect)),
+        'dh_raw': int(dh_raw),
+    }
+
+
+# ---------------------- JSON API ROUTES ONLY ----------------------
+
+# Route to serve the index.html page
+@app.route("/dencity", methods=["GET", "POST"])
+def density_home():
+    if request.method == "POST":
+        marks = request.form.get("marks")
+        question_type = request.form.get("question_type")
+        # Pass user selections to the questions.html page for displaying the question
+        return render_template("home.html", marks=marks, question_type=question_type)
+    return render_template("dencity.html")
+@app.route("/questions", methods=["POST"])
+def api_question():
+    data = request.get_json(force=True)
+    marks = str(data.get("marks"))
+    q_type = data.get("question_type")
+
+    if q_type == "Random":
+        q_type = random.choice(["Pressure", "Density"])
+
+    # Generate question
+    if marks == "1" and q_type == "Pressure":
+        question = get_pressure_altitude_question()
+    elif marks == "1" and q_type == "Density":
+        question = get_density_altitude_question()
+    elif marks == "2" and q_type == "Pressure":
+        question = generate_pressure_2mark_question()
+    elif marks == "2" and q_type == "Density":
+        question = generate_density_2mark_question()
+    else:
+        return jsonify({"error": "Invalid combination"}), 400
+
+    # Rename text → question
+    question["question"] = question.pop("text", "")
+
+    if "correct" in question:
+        question["correct_answer"] = question.pop("correct")
+        
+    # Always convert options to A, B, C, D format when MCQ
+    if question.get("type") == "mcq":
+        labels = ["A", "B", "C", "D"]
+        original_options = question.get("options", [])
+
+        # Determine the unit for each category
+        if question["category"] in ["pressure", "pressure_2mark", "density_2mark"]:
+            suffix = " ft"
+        elif question["category"] in ["density"]:
+            suffix = " °C"
+        else:
+            suffix = ""
+
+        question["options"] = [
+            {
+                "label": labels[i],
+                "value": f"{original_options[i]}{suffix}"
+            }
+            for i in range(min(4, len(original_options)))
+        ]
+
+    return jsonify(question)
+
+
+
+@app.route("/api/check_answer", methods=["POST"])
+def api_check_answer():
+    """
+    Expects JSON:
+    {
+        "user_answer": "number",
+        "correct_answer": "number",
+        "marks": 1 or 2,
+        "category": "...",
+        "label": "..."
+    }
+    Returns JSON whether the answer is correct and any extra info if desired.
+    """
+    data = request.get_json(force=True)
+    try:
+        correct_answer = int(data.get("correct_answer"))
+        is_correct = int(data.get("user_answer")) == correct_answer
+    except:
+        is_correct = False
+        correct_answer = None
+
+    response = {
+        "is_correct": is_correct,
+        "user_answer": data.get("user_answer"),
+        "correct_answer": correct_answer,
+        "category": data.get("category"),
+        "marks": data.get("marks"),
+        "label": data.get("label")
+    }
+    return jsonify(response)
 
 # Error handlers
 @app.errorhandler(400)
