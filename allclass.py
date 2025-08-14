@@ -7,7 +7,7 @@ from cal_func import calculate_geodesic1
 from geographiclib.geodesic import Geodesic
 import datetime
 from pygeomag import GeoMag
-import groq
+
 from typing import Optional
 from fuzzywuzzy import fuzz
 geo = GeoMag()
