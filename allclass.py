@@ -606,7 +606,11 @@ class AirportQuestionGenerator:
 
                 question_text=get_random_question_template()
                 
-                  
+                
+               
+                #print(question_text)
+               
+                
                 
                 details = QuestionDetails(
                     departure=dep,
