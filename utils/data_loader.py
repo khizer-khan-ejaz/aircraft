@@ -1,4 +1,4 @@
-from allclass import *
+from utils.allclass import *
 import ast
 PREDEFINED_2_MARK_QUESTIONS = [
     {

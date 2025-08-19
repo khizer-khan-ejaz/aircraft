@@ -1,23 +1,8 @@
-from flask import  Flask,Blueprint, request, jsonify, render_template
-from utils.airport_utils import AIRPORT_DATA
+from flask import Blueprint, request, jsonify, render_template
+from utils.data_loader import AIRPORT_DATA
 import random
-import ast
-density_bp = Blueprint('density', __name__)
-app = Flask(__name__)
-@app.route("/dencity", methods=["GET", "POST"])
-def density_home():
-    if request.method == "POST":
-        marks = request.form.get("marks")
-        question_type = request.form.get("question_type")
-        # Pass user selections to the questions.html page for displaying the question
-        return render_template("home.html", marks=marks, question_type=question_type)
-    return render_template("dencity.html")
-def load_airport_data(filepath="data.txt"):
-    with open(filepath, "r") as f:
-        content = f.read()
-    return ast.literal_eval(content)
 
-AIRPORT_DATA = load_airport_data()
+density_bp = Blueprint('density', __name__)
 
 # ---------------------- PRESSURE ALTITUDE (1 mark) ----------------------
 TEMPLATES_PRESSURE_1MARK = [
@@ -164,6 +149,14 @@ def generate_pressure_2mark_question():
     }
 
 # ---------------------- DENSITY ALTITUDE (2 mark) ----------------------
+DENSITY_2MARK_TEMPLATES = [
+    "At {airport}, the QNH is {qnh} hPa and the OAT is {oat} °C. Using the elevation of the airport, calculate the Density Altitude. Round your answer to the nearest 50 ft.",
+    "Given the QNH of {qnh} hPa and OAT of {oat} °C at {airport}, find the Density Altitude using the airport's elevation. Round your final answer to nearest 50 feet.",
+    "Calculate the Density Altitude for {airport} with QNH {qnh} hPa and OAT {oat} °C. Use the known elevation and round to nearest 50 ft.",
+    "Given OAT {oat} °C and QNH {qnh} hPa at {airport}, determine the Density Altitude by using airport elevation. Round your answer to nearest 50 feet.",
+    "At {airport} Airport, with QNH {qnh} hPa and OAT {oat} °C, compute the Density Altitude. Use elevation and round result to nearest 50 ft."
+]
+
 def generate_density_2mark_mcq(correct_answer):
     wrong_1 = correct_answer + random.choice([-100, -50, 50, 100])
     wrong_2 = correct_answer + random.choice([-150, 150])
@@ -174,7 +167,56 @@ def generate_density_2mark_mcq(correct_answer):
         options.append(correct_answer + random.choice([-250, 250]))
     random.shuffle(options)
     return options
-@app.route("/questions", methods=["POST"])
+
+def generate_density_2mark_question():
+    airport = random.choice(list(AIRPORT_DATA.keys()))
+    elevation = AIRPORT_DATA[airport]
+    qnh = random.choice(range(990, 1036, 10))
+    oat = random.choice(range(-20, 36))
+    ph_raw = elevation + (1013 - qnh) * 30
+    ph_rounded = int(50 * round(ph_raw / 50))
+    ph_thousands = ph_rounded / 1000
+    isa_temp = 15 - 2 * ph_thousands
+    isa_dev = oat - isa_temp
+    temp_effect = isa_dev * 120
+    dh_raw = ph_rounded + temp_effect
+    dh_rounded = int(50 * round(dh_raw / 50))
+
+    question_text = random.choice(DENSITY_2MARK_TEMPLATES).format(
+        airport=airport, qnh=qnh, oat=oat
+    )
+    q_type = random.choice(['mcq', 'typein'])
+    options = generate_density_2mark_mcq(dh_rounded) if q_type == 'mcq' else []
+    return {
+        'marks': 2,
+        'label': '2 Marks – Density Altitude',
+        'category': 'density_2mark',
+        'text': question_text,
+        'type': q_type,
+        'options': options,
+        'correct': dh_rounded,
+        'elev': elevation,
+        'qnh': qnh,
+        'oat': oat,
+        'airport': airport,
+        'ph_rounded': ph_rounded,
+        'isa_temp': round(isa_temp, 1),
+        'isa_dev': round(isa_dev, 1),
+        'temp_effect': int(round(temp_effect)),
+        'dh_raw': int(dh_raw),
+    }
+
+# ---------------------- ROUTES ----------------------
+@density_bp.route("/dencity", methods=["GET", "POST"])
+def density_home():
+    if request.method == "POST":
+        marks = request.form.get("marks")
+        question_type = request.form.get("question_type")
+        # Pass user selections to the home.html page for displaying the question
+        return render_template("home.html", marks=marks, question_type=question_type)
+    return render_template("dencity.html")
+
+@density_bp.route("/questions", methods=["POST"])
 def api_question():
     data = request.get_json(force=True)
     marks = str(data.get("marks"))
@@ -224,48 +266,32 @@ def api_question():
 
     return jsonify(question)
 
+@density_bp.route("/api/check_answer", methods=["POST"])
+def api_check_answer():
+    data = request.get_json(force=True)
+    try:
+        correct_answer = int(data.get("correct_answer"))
+        user_answer = data.get("user_answer")
+        # Handle both MCQ (label like "A") and type-in (numeric) answers
+        if isinstance(user_answer, str) and user_answer in ["A", "B", "C", "D"]:
+            # For MCQ, map the label back to the correct answer value
+            options = data.get("options", [])
+            selected_option = next((opt for opt in options if opt["label"] == user_answer), None)
+            user_value = int(selected_option["value"].replace(" ft", "").replace(" °C", "")) if selected_option else None
+        else:
+            user_value = int(user_answer)
+        is_correct = user_value == correct_answer
+    except (ValueError, TypeError):
+        is_correct = False
+        correct_answer = None
+        user_value = None
 
-def generate_density_2mark_question():
-    airport = random.choice(list(AIRPORT_DATA.keys()))
-    elevation = AIRPORT_DATA[airport]
-    qnh = random.choice(range(990, 1036, 10))
-    oat = random.choice(range(-20, 36))
-    ph_raw = elevation + (1013 - qnh) * 30
-    ph_rounded = int(50 * round(ph_raw / 50))
-    ph_thousands = ph_rounded / 1000
-    isa_temp = 15 - 2 * ph_thousands
-    isa_dev = oat - isa_temp
-    temp_effect = isa_dev * 120
-    dh_raw = ph_rounded + temp_effect
-    dh_rounded = int(50 * round(dh_raw / 50))
-
-    DENSITY_2MARK_TEMPLATES = [
-        "At {airport}, the QNH is {qnh} hPa and the OAT is {oat} °C. Using the elevation of the airport, calculate the Density Altitude. Round your answer to the nearest 50 ft.",
-        "Given the QNH of {qnh} hPa and OAT of {oat} °C at {airport}, find the Density Altitude using the airport's elevation. Round your final answer to nearest 50 feet.",
-        "Calculate the Density Altitude for {airport} with QNH {qnh} hPa and OAT {oat} °C. Use the known elevation and round to nearest 50 ft.",
-        "Given OAT {oat} °C and QNH {qnh} hPa at {airport}, determine the Density Altitude by using airport elevation. Round your answer to nearest 50 feet.",
-        "At {airport} Airport, with QNH {qnh} hPa and OAT {oat} °C, compute the Density Altitude. Use elevation and round result to nearest 50 ft."
-    ]
-    question_text = random.choice(DENSITY_2MARK_TEMPLATES).format(
-        airport=airport, qnh=qnh, oat=oat
-    )
-    q_type = random.choice(['mcq', 'typein'])
-    options = generate_density_2mark_mcq(dh_rounded) if q_type == 'mcq' else []
-    return {
-        'marks': 2,
-        'label': '2 Marks – Density Altitude',
-        'category': 'density_2mark',
-        'text': question_text,
-        'type': q_type,
-        'options': options,
-        'correct': dh_rounded,
-        'elev': elevation,
-        'qnh': qnh,
-        'oat': oat,
-        'airport': airport,
-        'ph_rounded': ph_rounded,
-        'isa_temp': round(isa_temp, 1),
-        'isa_dev': round(isa_dev, 1),
-        'temp_effect': int(round(temp_effect)),
-        'dh_raw': int(dh_raw),
+    response = {
+        "is_correct": is_correct,
+        "user_answer": user_value if user_value is not None else data.get("user_answer"),
+        "correct_answer": correct_answer,
+        "category": data.get("category"),
+        "marks": data.get("marks"),
+        "label": data.get("label")
     }
+    return jsonify(response)

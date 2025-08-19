@@ -2,7 +2,7 @@ import math
 from typing import Tuple, Optional
 from geographiclib.geodesic import Geodesic
 import datetime
-from allclass import Point  # Assuming Point is defined in allclass
+from utils.allclass import Point  # Assuming Point is defined in allclass
 
 class Navigation:
     def get_track_angle(self, dep: Point, arr: Point, magnetic: bool = True, date: Optional[datetime.datetime] = None) -> float:

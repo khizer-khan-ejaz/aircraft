@@ -2,7 +2,7 @@ import random
 import math
 from typing import Dict, List, NamedTuple
 import logging
-from sample_airport import *
+from data.sample_data import *
 from cal_func import calculate_geodesic1
 from geographiclib.geodesic import Geodesic
 import datetime

@@ -1,7 +1,7 @@
 import datetime
 import math
-from allclass import *
-from sample_airport import *
+from utils.allclass import *
+from data.sample_data import *
 generator = AirportQuestionGenerator(sample_airports)
 def calculate_ground_speed(true_course, tas, wind_dir, wind_speed):
                         tc_rad = math.radians(true_course)

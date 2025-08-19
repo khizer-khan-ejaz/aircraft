@@ -34,5 +34,7 @@ def render_question_response(data, show_map=False):
             except Exception as e:
                 logger.error("Error rendering template: %s", str(e))
                 return jsonify({'error': 'Failed to render template'}), 500
+            
+
  
             

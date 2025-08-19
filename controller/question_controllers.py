@@ -1,21 +1,27 @@
-from flask import Blueprint, request, jsonify,Flask
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from models.question import AirportQuestionGenerator, CurrentQuestion
 from utils.data_loader import PREDEFINED_2_MARK_QUESTIONS, sample_airports, airports
-from utils.airport_utils import find_airport_by_name,find
+from utils.airport_utils import find_airport_by_name, find
 from utils.geo_utils import calculate_geodesic1, haversine_distance
-from utils.wind_utils import calculate_groundspeed
-from views.renderers import render_question_response
-from utils.geo_utils import *
+from utils.wind_utils import calculate_ground_speed
+from models.airport import Navigation, Point
+from utils.allclass import *
+from data.sample_data import *
+from cal_func import *
 import logging
 import random
-from allclass import *
-app = Flask(__name__)
+import math
+
+# Configure logger (logging setup is in app.py)
+logger = logging.getLogger(__name__)
+
 question_bp = Blueprint('question', __name__)
 
 generator = AirportQuestionGenerator(sample_airports)
+
 @question_bp.route('/generate_question', methods=['POST'])
-@jwt_required() 
+@jwt_required()
 def generate_question_endpoint():
     try:
         # Parse the JSON request data

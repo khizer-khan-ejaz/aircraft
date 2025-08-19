@@ -68,8 +68,8 @@ except ImportError:
     has_pygeomag = False
     logging.warning("pygeomag library not found. Magnetic variation calculations will be disabled.")
 
-from allclass import *
-from sample_airport import *
+from utils.allclass import *
+from data.sample_data import *
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
